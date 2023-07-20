@@ -1,8 +1,8 @@
 # import logging
 from datetime import datetime
 from fastapi import FastAPI, WebSocket
-from starlette.staticfiles import StaticFiles
-from starlette.middleware.cors import CORSMiddleware
+# from starlette.staticfiles import StaticFiles
+# from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
 # import asyncio
 import json
@@ -19,13 +19,13 @@ app = FastAPI()
 # ]
 
 # Enable CORS to allow cross-origin requests
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # Maintain a set of connected WebSocket clients
 websocket_clients = set()
