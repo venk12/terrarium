@@ -1,4 +1,4 @@
-# import logging
+import logging
 from datetime import datetime
 from fastapi import FastAPI, WebSocket
 # from starlette.staticfiles import StaticFiles
@@ -6,40 +6,28 @@ from fastapi import FastAPI, WebSocket
 from starlette.websockets import WebSocketDisconnect
 # import asyncio
 import json
+import time
 
-from app.utils import *
+from app.states import *
+from app.influx_read import *
 
 app = FastAPI()
 # app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Add this to allow_origin if needed
-# origins = [
-#     "http://localhost:3000",
-#     "localhost:3000"
-# ]
-
-# Enable CORS to allow cross-origin requests
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 
 # Maintain a set of connected WebSocket clients
 websocket_clients = set()
 
 # Configure logging
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format='%(asctime)s - %(message)s',
-#     datefmt='%Y-%m-%d %H:%M:%S',
-#     filename='websocket_log.txt',
-#     filemode='a'
-# )
-
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    filename='websocket_log.txt',
+    filemode='a'
+)
+   
 curr_status = Farm_Current_State()
+# fetch_current_state_from_db()
 
 async def websocket_receiver(websocket: WebSocket):
     
@@ -49,7 +37,7 @@ async def websocket_receiver(websocket: WebSocket):
 
     # Provide initial statuses to the newly connected WebSocket client
     print('Providing initial statuses to the newly connected WebSocket client..')
-    print('Initial state : ', str(curr_status.get_status()) )
+    print('Initial state : ', str(curr_status.get_status()))
     # await websocket.send_json(curr_status.get_status())
     await broadcast_status()
 
@@ -73,7 +61,7 @@ async def websocket_receiver(websocket: WebSocket):
                 if state_name == 'pump':
                     curr_status.update_pump_status(status)
                     print('current state: ', curr_status.get_status())
-                    # logging.info("LOG: light turned ",status," at ", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    logging.info("LOG: light turned ",status," at ", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                     await broadcast_status()
 
             # if data == "light:on":
