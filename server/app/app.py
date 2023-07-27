@@ -4,7 +4,8 @@ from fastapi import FastAPI, WebSocket
 # from starlette.staticfiles import StaticFiles
 # from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
-# import asyncio
+import threading
+import asyncio
 import json
 import time
 
@@ -92,3 +93,19 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/")
 async def root():
     return "Hello..terra api is now running!"
+
+async def broadcast_periodically():
+    while True:
+        curr_status.update_humidity_and_temperature()
+        await broadcast_status()
+        await asyncio.sleep(5)  # Wait for 10 seconds before broadcasting again
+
+def start_background_loop():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(broadcast_periodically())
+
+@app.on_event("startup")
+def startup_event():
+    broadcast_thread = threading.Thread(target=start_background_loop, daemon=True)
+    broadcast_thread.start()

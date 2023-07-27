@@ -41,7 +41,6 @@ def establish_mqtt_connection():
     while True:
         pass
 
-
 def on_message_data(client, userdata, message):
     """ A function to read data from various sensors connected to the server
         input: message
@@ -67,7 +66,6 @@ def on_message_data(client, userdata, message):
     elif esp32_type == 'plugs':
         on_plugs(client, userdata, message)
 
-
 def on_message_error(client, userdata, message):
     """ A function to throw error when sensors are misbehaving/sending garbage values
         input: message
@@ -82,7 +80,6 @@ def on_message_error(client, userdata, message):
     payload = message.payload
     esp32_id = topic.split('/')[2]
     debug_print(f'ERROR IN ESP32: {esp32_id}:\n{payload}')
-
 
 def on_message(client, userdata, message):
     """ A callback function to handle dataflow once connection is established. 

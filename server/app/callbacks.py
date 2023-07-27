@@ -66,8 +66,6 @@ def on_dht22(client, userdata, message):
     _to_frontend(esp32_id, temperature_dict)
     _to_frontend(esp32_id, humidity_dict)
 
-
-
 def on_soil_sensors(client, userdata, message):
     """ A function to read data flowing from soil sensors
         input: message
@@ -117,7 +115,6 @@ def on_soil_sensors(client, userdata, message):
 
     # DO STUFF WITH THE DATA 
 
-
 def on_water_level(client, userdata, message):
     """ A function to read data flowing from water sensors
         input: message
@@ -161,9 +158,30 @@ def on_water_level(client, userdata, message):
 
     # DO STUFF WITH THE DATA
 
-
 def on_pumps(client, userdata, message):
+    # Retrieved data after raspberry signal
     pass
 
 def on_plugs(client, userdata, message):
+    # Retrieved data after raspberry signal
     pass
+
+def pumps_state(client, esp32_id, index, state):
+    if state != 'on' and state != 'off':
+        debug_print("TF? state can only be 'on' or 'off'")
+        return -1
+    else:
+        publish_topic = f'/esp32/{esp32_id}/pumps/state'
+        state_message = f'{index}:{state}'
+        client.publish(publish_topic, state_message)
+        return 0
+    
+def plugs_state(client, esp32_id, index, state):
+    if state != 'on' and state != 'off':
+        debug_print("TF? state can only be 'on' or 'off'")
+        return -1
+    else:
+        publish_topic = f'/esp32/{esp32_id}/plugs/state'
+        state_message = f'{index}:{state}'
+        client.publish(publish_topic, state_message)
+        return 0

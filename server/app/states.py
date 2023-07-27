@@ -7,8 +7,8 @@ class Farm_Current_State:
         self.pump = 'on'
         self.humidity = read_latest_values_from_db('humidity')
         self.temperature = read_latest_values_from_db('temperature')
-        self.co2 = 10
-        self.soil_moisture = 122
+        self.co2 = 100
+        self.soil_moisture = 130
         self.remaining_reservoir_liters = 20
 
     def update_light_status(self, status: str):
@@ -41,6 +41,15 @@ class Farm_Current_State:
             "water_presence": self.soil_moisture,
             "co2":self.co2,
         }
+    
+    def update_humidity_and_temperature(self):
+        # Fetch the latest humidity and temperature values from InfluxDB
+        latest_humidity = read_latest_values_from_db('humidity')
+        latest_temperature = read_latest_values_from_db('temperature')
+
+        # Update the current state with the fetched values
+        self.update_humidity_status(latest_humidity)
+        self.update_temperature_status(latest_temperature)
     
 # def fetch_current_state_from_db():
 #     temperature = read_latest_values_from_db('temperature')

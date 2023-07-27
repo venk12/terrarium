@@ -24,6 +24,7 @@ def write_values_to_db(message):
    middle_value = message['1']
    bottom_value = message['2']
 
+   # Change the sensor positions based on physical marking and wire length
    t_1 = influxdb_client.Point("my_measurement").tag("sensor_position", "top").field("temperature", 27.3).field(tag,top_value)
    t_2 = influxdb_client.Point("my_measurement").tag("sensor_position", "middle").field("humidity", 32.3).field(tag,middle_value)
    t_3 = influxdb_client.Point("my_measurement").tag("sensor_position", "bottom").field("temperature", 25.3).field(tag,bottom_value)

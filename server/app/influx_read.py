@@ -38,4 +38,4 @@ def read_latest_values_from_db(field):
     print(val_container)
     return val_container
 
-read_latest_values_from_db('temperature')
+# read_latest_values_from_db('temperature')

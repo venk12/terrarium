@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ProgressBar from "./ProgressBar";
 
 const Dashboard = () => {
   const [FarmState, setFarmState] = useState({
@@ -10,6 +11,9 @@ const Dashboard = () => {
     "co2": 'loading..',
   })
   const [socket, setSocket] = useState(null);
+  const [plantGrowthPercentage, setPlantGrowthPercentage] = useState(10);
+  const [totalLeaves, setTotalLeaves] = useState(7)
+  // const [ph_progress, set_ph_progress] = useState(50)
 
   useEffect(() => {
 
@@ -51,6 +55,12 @@ const Dashboard = () => {
     // return () => {
     //   // socket.close();
     // };
+
+    // For refreshing the dashboard every 10 seconds
+    // const interval = setInterval(() => {
+    //   // fetchGraphData();
+    //  },60*1000);
+    //  return () => clearInterval(interval);
   }, []);
 
   const handleStatusSwitch = (e) => {
@@ -92,7 +102,15 @@ const Dashboard = () => {
       {/* <div>{JSON.stringify(FarmState)}</div> */}
 
       <div className="my-2">
-        <h3 className="my-2 text-m font-normal">Light Status: {FarmState['light']}</h3>
+        <div className="px-2 py-2 flex">
+          
+        <h3 className='font-bold'>Growth Progress: </h3>
+          <div className='px-2'>
+            <ProgressBar percentage={plantGrowthPercentage} totalLeaves={totalLeaves}/>
+          </div>
+        </div>
+        
+        <h3 className="my-2 text-m font-bold">Light Status: {FarmState['light']}</h3>
         <button
           onClick={handleStatusSwitch} value = 'light'
           className={`py-2 px-4 rounded ${
@@ -102,7 +120,7 @@ const Dashboard = () => {
         </button>
 
 
-        <h3 className="my-2 text-m font-normal">Pump Status: {FarmState['pump']}</h3>
+        <h3 className="my-2 text-m font-bold">Pump Status: {FarmState['pump']}</h3>
         <button
           onClick={handleStatusSwitch} value = 'pump'
           className={`py-2 px-4 rounded ${
@@ -111,11 +129,19 @@ const Dashboard = () => {
           {FarmState['pump'] === 'off' ?  'turn on ': 'turn off'}
         </button>
           
-        <h3 className="my-2 text-m font-normal">Temperature Status: {FarmState['temperature']} °C</h3>
+        <h3 className="font-bold my-2 text-m font-normal">Temperature Status:</h3>
+        <h4 className=''> Top: {FarmState['temperature'][0]} °C</h4>
+        <h4 className=''> Middle: {FarmState['temperature'][1]} °C</h4>
+        <h4 className=''> Bottom: {FarmState['temperature'][2]} °C</h4>
 
-        <h3 className="my-2 text-m font-normal">CO2 Status: {FarmState['co2']} ppm</h3>
+        <h3 className="font-bold my-2 text-m font-normal">CO2 Status: </h3>
+        <h4>{FarmState['co2']} ppm</h4>
 
-        <h3 className="my-2 text-m font-normal">Humidity Status: {FarmState['humidity']} %</h3>
+        <h3 className="font-bold my-2 text-m font-normal">Humidity Status: </h3>
+        <h4 className=''> Top: {FarmState['humidity'][0]} %</h4>
+        <h4 className=''> Middle: {FarmState['humidity'][1]} %</h4>
+        <h4 className=''> Bottom: {FarmState['humidity'][2]} %</h4>
+
 
         <h3 className="my-2 text-m font-normal">Water Presence Status: {FarmState['water_presence']} (0 = No Water)</h3>
 
