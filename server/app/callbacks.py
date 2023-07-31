@@ -1,17 +1,31 @@
-from app.utils import debug_print
+from app.utils import debug_print, Tare_weights, Devices
 import json
 from collections import deque
 import statistics
 import threading
 from app.influx_write import write_values_to_db
+import os
+from datetime import datetime
 
 # Store past sensor readings
 past_readings = {}
 
-lock = threading.Lock()
+past_readings_lock= threading.Lock()
+tare_weights_lock = threading.Lock()
 
 # Moving median filter size
 filter_size = 10
+
+
+tare = Tare_weights()
+tare.retrieve_tare_weights()
+
+# This dictionary will store the esp32_id and its type.
+devices = Devices()
+devices.retrieve_device_dict()
+
+
+#### DATA CALLBACKS ####
 
 def _to_frontend(esp32_id, message_dict):
     """ A function to write to database
@@ -21,7 +35,17 @@ def _to_frontend(esp32_id, message_dict):
     """
     debug_print(f'Received data from {esp32_id}: {message_dict}')
     write_values_to_db(message_dict)
-    pass
+
+
+    #### ONLY FOR TESTING PURPOSES, REMOVE ASAP ###
+    #if message_dict['content'] == 'water_level':
+    #    if message_dict['values'] == []:
+    #        set_tare_weight(0, 0)
+    #    elif message_dict['values'][0] > 5:
+    #        tare_weight = message_dict['values'][0]
+    #        set_tare_weight(0, tare_weight)
+    #        debug_print(f'Tare succesfully set at {tare_weight}')
+    #pass
 
 def on_dht22(client, userdata, message):
     """ A function to read data flowing from DHT22 sensors
@@ -33,7 +57,7 @@ def on_dht22(client, userdata, message):
         output: status
         logging: disabled
     """
-    global past_readings, lock
+    global past_readings
     data = message.payload
     topic = message.topic
     esp32_id = topic.split('/')[2]
@@ -43,13 +67,15 @@ def on_dht22(client, userdata, message):
     temperature_dict = {'content':'temperature'}
     humidity_dict = {'content':'humidity'}
 
+    temperature_list = []
+    humidity_list = []
     for sensor_data in data:
         sensor_index = sensor_data['index']
         sensor_id = f'{esp32_id}_{sensor_index}'
         temperature = sensor_data['temperature']
         humidity = sensor_data['humidity']
 
-        with lock:
+        with past_readings_lock:
             if sensor_id not in past_readings:
                 past_readings[sensor_id] = {'temperature': deque(maxlen=filter_size),
                                             'humidity': deque(maxlen=filter_size)}
@@ -60,9 +86,12 @@ def on_dht22(client, userdata, message):
             median_temperature = statistics.median(past_readings[sensor_id]['temperature'])
             median_humidity = statistics.median(past_readings[sensor_id]['humidity'])
 
-        temperature_dict[str(sensor_index)] = median_temperature
-        humidity_dict[str(sensor_index)] = median_humidity
+        temperature_list.append(median_temperature)
+        humidity_list.append(median_humidity)
 
+    temperature_dict['values'] = temperature_list
+    humidity_dict['values'] = humidity_list
+ 
     _to_frontend(esp32_id, temperature_dict)
     _to_frontend(esp32_id, humidity_dict)
 
@@ -76,7 +105,7 @@ def on_soil_sensors(client, userdata, message):
         output: status
         logging: disabled
     """
-    global past_readings, lock 
+    global past_readings 
     data = message.payload
     topic = message.topic
     esp32_id = topic.split('/')[2]
@@ -88,6 +117,8 @@ def on_soil_sensors(client, userdata, message):
     soil_moisture_dict = {'content':'soil_moisture'}
     water_presence_dict = {'content':'water_presence'}
 
+    soil_moisture_list = []
+    water_presence_list = []
     # Loop through the data and populate the dictionaries
     for sensor_data in data:
         sensor_index = sensor_data['index']
@@ -95,7 +126,7 @@ def on_soil_sensors(client, userdata, message):
         soil_moisture = sensor_data['soil_moisture']
         water_presence = sensor_data['water_presence']
 
-        with lock:
+        with past_readings_lock:
             if sensor_id not in past_readings:
                 past_readings[sensor_id] = {'soil_moisture': deque(maxlen=filter_size),
                                             'water_presence': deque(maxlen=filter_size)}
@@ -106,8 +137,11 @@ def on_soil_sensors(client, userdata, message):
             median_soil_moisture = statistics.median(past_readings[sensor_id]['soil_moisture'])
             median_water_presence = statistics.median(past_readings[sensor_id]['water_presence'])
 
-        soil_moisture_dict[str(sensor_index)] = median_soil_moisture
-        water_presence_dict[str(sensor_index)] = median_water_presence
+        soil_moisture_list.append(median_soil_moisture)
+        water_presence_list.append(median_water_presence)
+
+    soil_moisture_dict['values'] = soil_moisture_list
+    water_presence_dict['values'] = water_presence_list
 
     # Now temperature_dict and humidity_dict are filled with data
     _to_frontend(esp32_id, soil_moisture_dict)
@@ -125,22 +159,27 @@ def on_water_level(client, userdata, message):
         output: status
         logging: disabled
     """
-    global past_readings, lock  # Use the global variables
+    global past_readings  # Use the global variables
     data = message.payload
     topic = message.topic
     esp32_id = topic.split('/')[2]
 
     data = json.loads(message.payload)
 
+    with tare_weights_lock:
+        # The tare object is always up to date with the latest tare.
+        tare_weights = tare.tare_weights
+
     water_level_dict = {'content':'water_level'}
 
+    water_level_list = []
     # Loop through the data and populate the dictionaries
-    for sensor_data in data:
+    for sensor_data, tare_weight in zip(data, tare_weights):
         sensor_index = sensor_data['index']
         sensor_id = f'{esp32_id}_{sensor_index}'
-        water_level = sensor_data['raw_weight']  # Assuming 'raw_weight' is your water level reading
+        water_level = sensor_data['weight'] - tare_weight
 
-        with lock:
+        with past_readings_lock:
             # Add readings to past readings
             if sensor_id not in past_readings:
                 past_readings[sensor_id] = {'water_level': deque(maxlen=filter_size)}
@@ -151,12 +190,130 @@ def on_water_level(client, userdata, message):
             median_water_level = statistics.median(past_readings[sensor_id]['water_level'])
 
         # Add averages to dictionary
-        water_level_dict[str(sensor_index)] = median_water_level
+        water_level_list.append(median_water_level)
+    
+    water_level_dict['values'] = water_level_list
 
     # Now water_level_dict is filled with data
     _to_frontend(esp32_id, water_level_dict)
 
-    # DO STUFF WITH THE DATA
+
+#### SYSTEM CALLBACKS ####
+
+## Main Callback for messages on topic: '/esp32/new_device'
+def on_message(client, userdata, message):
+    """ A callback function to handle dataflow once connection is established. 
+        This triggers on_message_data() or on_message_error()
+        input: client, message
+        logging: should be enabled (topics being listened to)
+    """
+    debug_print(message.payload)
+
+    data = json.loads(message.payload)
+
+    esp32_id = data['esp32_id']
+    esp32_type = data['type']
+
+    # Save to dictionary.
+    devices.update_device_dict(esp32_id, esp32_type)
+
+    now = datetime.now()
+    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    client.publish("/esp32/datetime", current_time)
+
+
+    # Set topic-specific callback and subscribe to the new topic.
+    data_topic = f"/esp32/{esp32_id}/{esp32_type}/data"
+    client.message_callback_add(data_topic, on_message_data)
+    client.subscribe(data_topic)
+
+    error_topic = f"/esp32/{esp32_id}/{esp32_type}/error"
+    client.message_callback_add(error_topic, on_message_error)
+    client.subscribe(error_topic)
+
+    file_transfer_topic = f"/esp32/{esp32_id}/{esp32_type}/log_dump"
+    client.message_callback_add(file_transfer_topic, on_file_dump)
+    client.subscribe(file_transfer_topic)
+    debug_print(f"Listening on topic {file_transfer_topic}")
+
+## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/data'
+def on_message_data(client, userdata, message):
+    """ A function to read data from various sensors connected to the server
+        input: message
+        input_format: {
+            topic: <str>
+            payload: <list>
+        }
+        output: status
+        logging: disabled
+    """
+    topic = message.topic
+    topic_parts = topic.split('/')
+    esp32_type = topic_parts[3]
+
+    if esp32_type == 'dht22':
+        on_dht22(client, userdata, message)
+    elif esp32_type == 'soil_sensors':
+        on_soil_sensors(client, userdata, message)
+    elif esp32_type == 'water_level':
+        on_water_level(client, userdata, message)
+    elif esp32_type == 'pumps':
+        on_pumps(client, userdata, message)
+    elif esp32_type == 'plugs':
+        on_plugs(client, userdata, message)
+
+## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/error'
+def on_message_error(client, userdata, message):
+    """ A function to throw error when sensors are misbehaving/sending garbage values
+        input: message
+        input_format: {
+            topic: <str>
+            payload: <list>
+        }
+        output: status
+        logging: should be enabled
+    """
+    topic = message.topic
+    payload = message.payload
+    esp32_id = topic.split('/')[2]
+    debug_print(f'ERROR IN ESP32: {esp32_id}:\n{payload}')
+
+## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/log_dump'
+def on_file_dump(client, userdata, message):
+    ''' A function to retrieve files and save them in a folder
+    '''
+
+
+    topic = message.topic
+    payload = json.loads(message.payload.decode())
+
+    # Extract esp32_id and esp32_type from the topic
+    _, _, esp32_id, esp32_type, _ = topic.split('/')
+
+    # Retrieve file_name and content from payload
+    file_name = payload['file_name']
+    content = payload['content']
+
+    # Replace '/' with '-' in file_path
+    file_name = file_name.replace('/', '-')
+
+    # Add date and build full file path
+    date_str = datetime.now().strftime("%d_%m_%Y_")
+    file_name = os.path.join('retrieved_files', esp32_id, f'{date_str}{file_name}')
+
+    # Create directories if they don't exist
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
+    # Write content to the file
+    with open(file_name, 'w') as file:
+        file.write(content)
+
+    
+    debug_print(f'\n\n\n\n\n\n\nMessage on {topic} saved as {file_name}\n\n\n\n\n\n\n')
+    
+
+#### OTHER METHODS (TO MOVE TO ANOTHER FILE) ####
+
 
 def on_pumps(client, userdata, message):
     # Retrieved data after raspberry signal
@@ -185,3 +342,13 @@ def plugs_state(client, esp32_id, index, state):
         state_message = f'{index}:{state}'
         client.publish(publish_topic, state_message)
         return 0
+
+def set_tare_weight(index, tare_weight, esp32_id):
+    with tare_weights_lock:
+        # This way every time the tare is set, the tare object is updated
+        tare.tare_scale(index, tare_weight)
+    
+    # Reset the median filter for the specific sensor
+    with past_readings_lock:
+        sensor_id = f'{esp32_id}_{index}'
+        past_readings.pop(sensor_id, None)
