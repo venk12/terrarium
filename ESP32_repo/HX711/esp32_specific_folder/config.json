@@ -1,0 +1,14 @@
+{
+    "esp32_specific": {
+        "type": "water_level"
+    },
+    "mqtt": {
+        "server": "missile.local",
+        "base_topic": "esp32/{esp32_id}/{esp32_type}"
+    },
+    "sensors": {
+        "publish_interval": 0.2,
+        "calibrated_m": 20732.57,
+        "calibrated_c": -147334.8
+    }
+}

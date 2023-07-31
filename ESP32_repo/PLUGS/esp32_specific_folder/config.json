@@ -1,0 +1,9 @@
+{
+    "esp32_specific": {
+        "type": "plugs"
+    },
+    "mqtt": {
+        "server": "missile.local",
+        "base_topic": "esp32/{esp32_id}/{esp32_type}"
+    }
+}

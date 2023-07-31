@@ -1,0 +1,12 @@
+{
+    "esp32_specific": {
+        "type": "soil_sensors"
+    },
+    "mqtt": {
+        "server": "missile.local",
+        "base_topic": "esp32/{esp32_id}/{esp32_type}"
+    },
+    "sensors": {
+        "publish_interval": 0.2
+    }
+}
