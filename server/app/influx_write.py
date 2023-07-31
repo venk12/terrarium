@@ -20,15 +20,16 @@ def write_values_to_db(message):
    write_api = client.write_api(write_options=SYNCHRONOUS)
 
    tag = message['content']
-   top_value = message['0']
-   middle_value = message['1']
-   bottom_value = message['2']
+      # {
+      #    'content': 'humidity',
+      #    'values': []
+      # }
+   
+   values = message['values']
+   num_values = len(values)
+   print('number of values received from the sensor:', num_values)
 
-   # Change the sensor positions based on physical marking and wire length
-   t_1 = influxdb_client.Point("my_measurement").tag("sensor_position", "top").field("temperature", 27.3).field(tag,top_value)
-   t_2 = influxdb_client.Point("my_measurement").tag("sensor_position", "middle").field("humidity", 32.3).field(tag,middle_value)
-   t_3 = influxdb_client.Point("my_measurement").tag("sensor_position", "bottom").field("temperature", 25.3).field(tag,bottom_value)
-
-   write_api.write(bucket=bucket, org=org, record=t_1)
-   write_api.write(bucket=bucket, org=org, record=t_2)
-   write_api.write(bucket=bucket, org=org, record=t_3)
+   for index, value in enumerate(values):
+      # the measurement name 'my_measurement' should be extended to accomodate multiple boxes
+      point = influxdb_client.Point("my_measurement").tag("sensor_position", f"{index}").field(tag,value)
+      write_api.write(bucket=bucket, org=org, record=point)
