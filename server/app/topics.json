@@ -1,0 +1,14 @@
+{
+    "":{
+        "data":
+        "error"
+
+        
+    },
+
+    "functions":{
+        "datetime": "/esp32/datetime",
+        "send_file": "{base_topic}/send_file"
+    }
+
+}
