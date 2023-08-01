@@ -1,34 +1,27 @@
 from esp32_specific_folder.dht22_sensor import read_temperature, read_humidity
 
-def sensor_specific_function():
+def purpose_specific_function():
     """
     Reads temperature and humidity data from DHT22 sensors and returns the payload.
 
     :raises ValueError: If unable to read data from the sensor.
     :return: A list of dictionaries containing sensor index, temperature, and humidity.
     """
+
     # Read temperature and humidity data
     temperature_data = read_temperature()
     humidity_data = read_humidity()
 
-    # Check if readings are successful
-    if temperature_data is None or humidity_data is None:
-        raise ValueError(f"Unable to read data from sensor")
-
     payload = []
     # Process temperature and humidity data, pairing by sensor index
     for temperature, humidity in zip(temperature_data, humidity_data):
-        # Check if individual readings are successful
-        if temperature["temperature"] is None or humidity["humidity"] is None:
-            raise ValueError(f"Unable to read sensor data in sensor {temperature['index']}")
-
         # Append combined reading to the payload
         payload.append({
             'index': temperature["index"],
             'temperature': temperature["temperature"],
             'humidity': humidity["humidity"]
         })
-
+    
     return payload
 
 def other_topic_callback(decoded_topic, decoded_msg, base_topic):

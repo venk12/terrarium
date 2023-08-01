@@ -1,8 +1,7 @@
 # Importing specific libraries and functions
 from esp32_specific_folder.hx711_sensor import read_weight
-import machine
 
-def sensor_specific_function():
+def purpose_specific_function():
     """
     Read weight data from the sensor and format it into a payload.
 
@@ -11,6 +10,7 @@ def sensor_specific_function():
     weight_list = read_weight()  # Get the weight data
 
     payload = []
+    # Iterate over the weights data to create the payload
     for weight in weight_list:
         # Append each weight as a dictionary to the payload
         payload.append({

@@ -3,7 +3,7 @@ import time
 import machine
 
 # Local application/library-specific imports
-from utils import print_log, file_log_error, file_log
+from utils import print_log, file_log
 from device import check_reset_button_pressed, error_led
 from config import read_json
 from mqtt import MQTT_handler
@@ -12,9 +12,6 @@ from wifi import WIFI_handler
 error_led('off')
 
 try:
-    # Initialization
-    rtc = machine.RTC()
-
     # Check if reset button is pressed only at startup (for reset procedure)
     check_reset_button_pressed()
 
@@ -56,11 +53,9 @@ try:
         print_log(f'Now listening on topic {state_topic}')
 
         while True:
-            mqtt_handler.wait_msg()
+            mqtt_handler.wait_msg(topic=state_topic)
 
 except Exception as e:
-    message = 'Caught exception in the main loop. Restarting machine.'
-    print_log(message, error = True, exc = e )
-    file_log_error(e, message)
+    file_log('Caught exception in main.py. Restarting machine.', error=True, exc=e)
     error_led('on')
     machine.reset()

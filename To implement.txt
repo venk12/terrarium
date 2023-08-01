@@ -1,0 +1,36 @@
+################ ESP32 ################
+
+
+-   Add listen on trigger topic for resending id and type
+
+-   Implement OTA updates
+
+-   Save water amount after every irrigation
+
+-   Bluetooth connectivity for communicating ssid and pw
+
+    #### DONE ####
+    -   error logging needs to happen both through mqtt and locally in error_log.txt .
+        insert function to send error_log.txt file through mosquitto if requested.
+
+    -   Figure out a way to easily select the specific sensor folder 
+
+################ RASPBERRY ################
+
+-   XXXXXX Wifi usb module for immediate connectivity, in the ESP put a file with a preconfigured ssid and password.
+
+-   If system reboots, send message to ESPs for asking names (to solve the error in which a new device is added before turning on the program)
+
+-   When actuator esp is connected, immediately send on or off state according to the previous state (maybe after blackout)
+
+-   Possibility to forget esp32 devices (from dictionary)
+
+-   If a device present in the dictionary is not found, show error to user (with possibility to forget the esp)
+
+-   Send datetime every day
+
+-   Error handling for the callbacks
+
+################ GENERAL ################
+
+-   if a method or function isnt ready for edgecases or needs error handling, comment it with       ### GENERAL TO HANDLE ### + reason why

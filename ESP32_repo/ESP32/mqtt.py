@@ -8,7 +8,7 @@ import umqtt.simple as simple
 
 # Local application/library-specific imports
 from esp32_specific_folder.esp32_specific_function import other_topic_callback
-from utils import debug_print, file_log_error, print_log, resolve_mdns_hostname, initialize_mqtt_handler
+from utils import print_log, resolve_mdns_hostname, initialize_mqtt_handler, file_log
 from time_manager import read_time, set_time
 from config import read_json
 
@@ -41,9 +41,7 @@ class MQTT_handler:
             print_log(f'Resolved MQTT broker IP: {mqtt_server}')
         except Exception as exc:
             # Log MQTT broker resolution failure
-            file_log_error(exc)
-            print_log(f'Unable to resolve MQTT broker.', error=True, exc=exc)
-
+            print_log('Unable to resolve MQTT broker.', error=True, exc=exc)
             # The exception is gonna get caught on the main try-except, causes machine.reset()
             raise
     
@@ -56,8 +54,7 @@ class MQTT_handler:
             # Log successful MQTT broker connection
             print_log(f'Connected to the MQTT broker!')
         except TimeoutError as exc:
-            file_log_error(exc)
-            print_log(f'Unable to connect to MQTT broker.', error=True, exc=exc)
+            print_log('Unable to connect to MQTT broker.', error=True, exc=exc)
             # The exception is gonna get caught on the main try-except, causes machine.reset()
             raise
 
@@ -85,8 +82,8 @@ class MQTT_handler:
                 self.client.subscribe(file_path_topic.encode())
                 print_log(f'ESP32 subscribed to the topic {str(file_path_topic)}')
                 break
-            except Exception as e:
-                file_log_error(e)
+            except Exception as exc:
+                file_log('Error initializing MQTT client', error=True, exc=exc)
                 attempts += 1
                 time.sleep(CONNECTION_ATTEMPT_DELAY)
         else:
@@ -106,10 +103,8 @@ class MQTT_handler:
         mqtt_topic = "/esp32/new_device"
         payload = {"esp32_id": esp32_id, "type": esp32_type}
         print_log(f'Published {payload} on {mqtt_topic}')
-        # debug_print('mqtt.py', 62, f'published {payload} on {mqtt_topic}')
         try:
             self.publish(mqtt_topic, json.dumps(payload))
-            return 0
         except OSError:
             # Handle the exception, e.g., by reconnecting
             self.try_reconnect(lambda: self.publish_new_device(esp32_id, esp32_type))
@@ -158,11 +153,11 @@ class MQTT_handler:
             
             # Publish the message to the specified topic
             self.publish(topic, message)
-            debug_print('mqtt.py', 128, f"Sent file {file_path} on the topic {topic}")
-        except Exception as e:
+            print_log(f"Sent file {file_path} on the topic {topic}")
+        except Exception as exc:
             # Handle any exceptions that might occur
-            file_log_error(e)
-            debug_print('mqtt.py', 132, f"An error occurred while sending the file {file_path}: {str(e)}")
+            message = f'Error sending {file_path} through MQTT'
+            file_log(message, error=True, exc=exc)
 
 
     def on_message_callback(self, topic, msg):
@@ -173,7 +168,6 @@ class MQTT_handler:
         :param msg: bytes - The received message
         """
         print_log(f'Message {msg} received on topic {topic}')
-        #debug_print('mqtt.py', 80, f'Message {msg} received on topic {topic}')
 
         # Decode message & topic
         decoded_msg = msg.decode('utf-8')
@@ -209,11 +203,14 @@ class MQTT_handler:
             self.try_reconnect(lambda: self.publish(topic, payload))
 
 
-    def wait_msg(self):
+    def wait_msg(self, topic,reconnect=False):
         try:
+            if reconnect:
+                self.subscribe(topic=topic)
             self.client.wait_msg()
-        except Exception as e:
-            self.try_reconnect(self.wait_msg)
+        except Exception as exc:
+            print_log('Reconnecting after wait_msg', error=True, exc=exc)
+            self.try_reconnect(lambda: self.wait_msg(topic=topic, reconnect=True))
 
 
     def check_msg(self):

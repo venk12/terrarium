@@ -1,7 +1,7 @@
 import time
 import json
-from utils import file_log_error, print_log, file_log
-from esp32_specific_folder.esp32_specific_function import sensor_specific_function
+from utils import print_log, file_log
+from esp32_specific_folder.esp32_specific_function import purpose_specific_function
 
 
 def main_loop(mqtt_handler, base_topic, publish_interval):
@@ -16,8 +16,8 @@ def main_loop(mqtt_handler, base_topic, publish_interval):
 
     # Create different topics using 'base_topic'
     data_topic = base_topic + "/data"
-    error_topic = base_topic + "/error"
-    status_topic = base_topic + "/status"
+    #error_topic = base_topic + "/error"
+    #status_topic = base_topic + "/status"
     
     pub_count = 0
 
@@ -25,27 +25,22 @@ def main_loop(mqtt_handler, base_topic, publish_interval):
        
         try:
             # Retrieve the payload using a sensor-specific function
-            try:
-                payload = sensor_specific_function()
-            except Exception as exc:
-                mqtt_handler.publish(error_topic, f'Error while reading data from the sensor(s): {exc}')
-                time.sleep(publish_interval)
-                continue
+            payload = purpose_specific_function()
             
-            if payload is not None:
-                mqtt_handler.publish(data_topic, json.dumps(payload))
-                pub_count += 1
+            # Send paylod to broker
+            mqtt_handler.publish(data_topic, json.dumps(payload))
+            pub_count += 1
 
-                if pub_count % 10 == 0:
-                    file_log(f'published {pub_count} messages')
+            if pub_count % 10 == 0:
+                file_log(f'published {pub_count} messages', print_flag=False)
                 
 
             mqtt_handler.check_msg()  # Check for incoming messages
         except Exception as exc:
-            # Handle the exception by reconnecting,
+            # Handle the exception by reconnecting
             time.sleep(1)  # Wait a second before reconnecting
-            file_log_error(exc)
-            # if connection fails let the exception propagate to the main module
+            file_log('Exception caught in loop_hanlder.py', error=True, exc=exc)
+            # If connection fails let the exception propagate to the main module
             mqtt_handler.connect()
 
         time.sleep(publish_interval)  # Sleep for the specified interval before publishing again

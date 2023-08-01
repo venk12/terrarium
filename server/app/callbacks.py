@@ -16,7 +16,6 @@ tare_weights_lock = threading.Lock()
 # Moving median filter size
 filter_size = 10
 
-
 tare = Tare_weights()
 tare.retrieve_tare_weights()
 
@@ -69,11 +68,19 @@ def on_dht22(client, userdata, message):
 
     temperature_list = []
     humidity_list = []
+    errors_dict = {'humidity':[], 'temperature':[]}
     for sensor_data in data:
         sensor_index = sensor_data['index']
         sensor_id = f'{esp32_id}_{sensor_index}'
         temperature = sensor_data['temperature']
         humidity = sensor_data['humidity']
+
+        if not humidity or not temperature:
+            if not humidity:
+                errors_dict['humidity'].append(sensor_id)
+            if not temperature:
+                errors_dict['temperature'].append(sensor_id)
+            continue
 
         with past_readings_lock:
             if sensor_id not in past_readings:
@@ -83,11 +90,15 @@ def on_dht22(client, userdata, message):
             past_readings[sensor_id]['temperature'].append(temperature)
             past_readings[sensor_id]['humidity'].append(humidity)
 
-            median_temperature = statistics.median(past_readings[sensor_id]['temperature'])
-            median_humidity = statistics.median(past_readings[sensor_id]['humidity'])
+            median_temperature = round(statistics.median(past_readings[sensor_id]['temperature']), 1)
+            median_humidity = round(statistics.median(past_readings[sensor_id]['humidity']), 1)
 
         temperature_list.append(median_temperature)
         humidity_list.append(median_humidity)
+
+    if errors_dict['humidity'] or errors_dict['temperature']:
+        # Handle error communicating to the user that there's a problem with the specific sensor
+        pass
 
     temperature_dict['values'] = temperature_list
     humidity_dict['values'] = humidity_list
@@ -134,8 +145,8 @@ def on_soil_sensors(client, userdata, message):
             past_readings[sensor_id]['soil_moisture'].append(soil_moisture)
             past_readings[sensor_id]['water_presence'].append(water_presence)
 
-            median_soil_moisture = statistics.median(past_readings[sensor_id]['soil_moisture'])
-            median_water_presence = statistics.median(past_readings[sensor_id]['water_presence'])
+            median_soil_moisture = round(statistics.median(past_readings[sensor_id]['soil_moisture']), 1)
+            median_water_presence = round(statistics.median(past_readings[sensor_id]['water_presence']), 1)
 
         soil_moisture_list.append(median_soil_moisture)
         water_presence_list.append(median_water_presence)
@@ -187,7 +198,7 @@ def on_water_level(client, userdata, message):
             past_readings[sensor_id]['water_level'].append(water_level)
 
             # Calculate median
-            median_water_level = statistics.median(past_readings[sensor_id]['water_level'])
+            median_water_level = round(statistics.median(past_readings[sensor_id]['water_level']), 1)
 
         # Add averages to dictionary
         water_level_list.append(median_water_level)
@@ -217,10 +228,10 @@ def on_message(client, userdata, message):
     # Save to dictionary.
     devices.update_device_dict(esp32_id, esp32_type)
 
+    # Send datetime to all the ESP32
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
     client.publish("/esp32/datetime", current_time)
-
 
     # Set topic-specific callback and subscribe to the new topic.
     data_topic = f"/esp32/{esp32_id}/{esp32_type}/data"
@@ -235,6 +246,7 @@ def on_message(client, userdata, message):
     client.message_callback_add(file_transfer_topic, on_file_dump)
     client.subscribe(file_transfer_topic)
     debug_print(f"Listening on topic {file_transfer_topic}")
+
 
 ## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/data'
 def on_message_data(client, userdata, message):
@@ -312,36 +324,7 @@ def on_file_dump(client, userdata, message):
     debug_print(f'\n\n\n\n\n\n\nMessage on {topic} saved as {file_name}\n\n\n\n\n\n\n')
     
 
-#### OTHER METHODS (TO MOVE TO ANOTHER FILE) ####
-
-
-def on_pumps(client, userdata, message):
-    # Retrieved data after raspberry signal
-    pass
-
-def on_plugs(client, userdata, message):
-    # Retrieved data after raspberry signal
-    pass
-
-def pumps_state(client, esp32_id, index, state):
-    if state != 'on' and state != 'off':
-        debug_print("TF? state can only be 'on' or 'off'")
-        return -1
-    else:
-        publish_topic = f'/esp32/{esp32_id}/pumps/state'
-        state_message = f'{index}:{state}'
-        client.publish(publish_topic, state_message)
-        return 0
-    
-def plugs_state(client, esp32_id, index, state):
-    if state != 'on' and state != 'off':
-        debug_print("TF? state can only be 'on' or 'off'")
-        return -1
-    else:
-        publish_topic = f'/esp32/{esp32_id}/plugs/state'
-        state_message = f'{index}:{state}'
-        client.publish(publish_topic, state_message)
-        return 0
+#### OTHER FUNCTIONS ####
 
 def set_tare_weight(index, tare_weight, esp32_id):
     with tare_weights_lock:
@@ -352,3 +335,11 @@ def set_tare_weight(index, tare_weight, esp32_id):
     with past_readings_lock:
         sensor_id = f'{esp32_id}_{index}'
         past_readings.pop(sensor_id, None)
+
+def on_pumps(client, userdata, message):
+    # Retrieved data after raspberry signal
+    pass
+
+def on_plugs(client, userdata, message):
+    # Retrieved data after raspberry signal
+    pass

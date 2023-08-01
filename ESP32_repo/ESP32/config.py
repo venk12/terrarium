@@ -1,6 +1,6 @@
 import json
 from device import get_esp32_id
-from utils import file_log_error
+from utils import print_log
 
 def read_json():
     try:
@@ -39,17 +39,17 @@ def read_json():
         return return_dict
 
     except FileNotFoundError as exc:
-        file_log_error(exc, "The config.json file was not found.")
+        print_log("The config.json file was not found.", error=True, exc=exc)
         raise
 
     except json.JSONDecodeError as exc:
-        file_log_error(exc, "Failed to parse the config.json file. Please ensure it is properly formatted.")
+        print_log("Failed to parse the config.json file. Please ensure it is properly formatted.", error=True, exc=exc)
         raise
 
     except KeyError as exc:
-        file_log_error(exc, f"A required key is missing in the config.json file")
+        print_log(f"A required key is missing in the config.json file", error=True, exc=exc)
         raise
 
     except Exception as exc:
-        file_log_error(exc, f"An unexpected error occurred while reading the config.json file")
+        print_log(f"An unexpected error occurred while reading the config.json file", error=True, exc=exc)
         raise

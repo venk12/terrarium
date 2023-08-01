@@ -2,7 +2,7 @@ import os
 import machine
 import time
 import network
-from utils import print_log, file_log
+from utils import file_log
 
 # Constants
 RESET_PIN = 16
@@ -27,8 +27,7 @@ def check_reset_button_pressed():
             if time.time() - start_time > 5:  # If pressed for more than 5 seconds
                 try:
                     os.remove('wifi_creds.txt')  # Delete the WiFi credentials file
-                    print_log('Reset successful!')
-                    file_log('Manual reset - Removed wifi_creds.txt')
+                    file_log('Manual reset successful - Removed wifi_creds.txt')
                 except OSError:
                     # The file wasn't there already
                     pass

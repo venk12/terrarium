@@ -4,7 +4,7 @@ import network
 import socket
 
 # Local application/library-specific imports
-from utils import print_log
+from utils import print_log, file_log
 from mqtt import initialize_wifi_handler
 
 MAX_CONNECTION_ATTEMPTS = 10
@@ -146,7 +146,7 @@ class WIFI_handler:
 
         except OSError as e:
             # If wifi_creds.txt not found:
-            print_log('File not present, starting AP for setup')
+            file_log('File not present, starting AP for setup')
             ssid, password = self.start_wifi_creds_config()
 
         return ssid, password
@@ -168,6 +168,7 @@ class WIFI_handler:
                 f.write(f'{ssid},{password}')
         except Exception as exc:
             print_log(f"Could not save WiFi credentials to file", error=True, exc=exc)
+            raise
 
         print_log('Wifi ssid and password retrieved from user.')
         #debug_print('wifi.py', 26, 'Wifi ssid and password retrieved from user.')
@@ -197,6 +198,7 @@ class WIFI_handler:
             if time.time() - start_time > 30:  # After 30 seconds
                 break
             time.sleep(0.1)
+        
         print_log(f'connected: {self.isconnected()} after {time.time() - start_time}s')
 
 

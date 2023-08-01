@@ -1,11 +1,11 @@
 import uvicorn
-from app.dataflow import establish_mqtt_connection
+from app.mqtt import initialize_mqtt_connection
 
 if __name__ == "__main__":
 
     # Setup the connections with the sensors
     try:
-        establish_mqtt_connection()
+        initialize_mqtt_connection()
     except:
         print("Could not establish connection with mqtt broker. Please ensure the sensors are plugged in.")
 

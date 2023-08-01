@@ -81,6 +81,7 @@ def convert_traceback(exc):
 
 def file_log_error(exc, *args, **kwargs):
     """
+    DEPRECATED
     Logs an error message to a file.
 
     :param exc: Exception - The exception object
@@ -94,7 +95,7 @@ def file_log_error(exc, *args, **kwargs):
     # Constructing the error message
     error_message = f"[ERROR] {read_time()} {traceback_str} " + " ".join(map(str, args)) + " " + " ".join(f"{k}={v}" for k, v in kwargs.items())
     
-    log_files = ['error_logfile.log'] #, 'logfile.log']
+    log_files = {'error_file':'error_logfile.log', 'log_file':'logfile.log'}
     
     for log_file in log_files:
         # truncate only if bigger than 1Mb
@@ -119,33 +120,51 @@ def debug_print(file_name, line_number, *args, **kwargs):
     print(f"[DEBUG] {file_name}:{line_number}", *args, **kwargs)
 
 
-def file_log(*args, **kwargs):
+def file_log(message, error=False, exc=None, print_flag = True):
     """
-    Logs a message to a file.
+    Logs a message to a file and prints it.
+    Use this function with error=True only if the exception is handled, not if it's just propagated upwards!
 
-    :param args: tuple - The message to be logged
-    :param kwargs: dict - Additional keyword arguments to be included in the logging, formatted as key=value
+    :param message: str - The message to be included in the log file
+    :param error: bool - If True, logs an error message to both logfile.log and error_logfile.log
+    :param exc: Exception - An exception object to include in error_logfile.log (but not logfile.log)
     """
-    log_message = f"[LOG] - {read_time()} - " + " ".join(map(str, args)) + " " + " ".join(f"{k}={v}" for k, v in kwargs.items())
+
+    if print_flag:
+        print_log(message, error=error)
+
+    log_type = "[ERROR]" if error else "[LOG]"
+    log_message = f'{log_type} - {read_time()} - {message}'
     
-    # truncate only if bigger than 1Mb
+    log_files = {'error_file':'error_logfile.log', 'log_file':'logfile.log'}
+    # Truncate only if bigger than 1Mb
     truncate_log_file('logfile.log')
 
-    # Append the log message to a file
-    with open('logfile.log', 'a') as log_file:
-        log_file.write(log_message + '\n')
+    # Logs both [LOG] or [ERROR] to the log file
+    with open(log_files['log_file'], 'a') as file:
+                file.write(log_message + '\n')
+    
+    if error:
+        if exc:
+            traceback_str = convert_traceback(exc)
+            log_message += f"\n\tException traceback: {traceback_str}"
+        
+        # Logs [ERROR] to the log file, including the traceback if present
+        with open(log_files['error_file'], 'a') as file:
+                file.write(log_message + '\n')
+        
 
 
-def print_log(*args, error=False, exc=None):
+def print_log(message, error=False, exc=None):
     """
     Prints a log message.
 
-    :param args: tuple - Additional messages to be included in the log print
+    :param message: str - The message to be included in the log print
     :param error: bool - If True, prints an error message
     :param exc: Exception - An exception object to include in the log print
     """
     log_type = "[ERROR]" if error else "[LOG]"
-    log_message = log_type + " " + " ".join(map(str, args))
+    log_message = f'{log_type} - {read_time()} - {message}'
 
     if error and exc:
         traceback_str = convert_traceback(exc)

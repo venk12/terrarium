@@ -1,4 +1,12 @@
 from app.influx_read import read_latest_values_from_db
+from commands import plugs_state, pumps_state
+
+
+MQTT_HANDLER_INSTANCE = None
+
+def instanciate_local_mqtt_handler(mqtt_handler):
+    global MQTT_HANDLER_INSTANCE
+    MQTT_HANDLER_INSTANCE = mqtt_handler
 
 class Farm_Current_State:
     # Maintains the current state of the box
@@ -12,9 +20,11 @@ class Farm_Current_State:
         self.remaining_reservoir_liters = 20
 
     def update_light_status(self, status: str):
+        pumps_state(MQTT_HANDLER_INSTANCE, esp32_id='d4d4dae4a810', index=1, state=status )
         self.light = status
 
     def update_pump_status(self, status: str):
+        #pumps_state(MQTT_HANDLER_INSTANCE, esp32_id=, index=, state=status )
         self.pump = status
 
     def update_humidity_status(self, status:int):

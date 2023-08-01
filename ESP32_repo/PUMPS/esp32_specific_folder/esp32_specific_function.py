@@ -1,7 +1,7 @@
 import machine
 from esp32_specific_folder.pumps import turn_off, turn_on
 
-def sensor_specific_function():
+def purpose_specific_function():
    pass
 
 def other_topic_callback(decoded_topic, decoded_msg, base_topic):

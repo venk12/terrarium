@@ -25,17 +25,16 @@ def read_temperature(sensor_index=None):
     index_list = sensor_index if sensor_index is not None else range(len(dht_sensors))
 
     temperature_list = []
-    try:
-        for index in index_list:
+    for index in index_list:
+        
+        try:
             dht_sensors[index].measure()
             temperature = dht_sensors[index].temperature()
-            if temperature is None:
-                print_log("[ERROR] Failed to read temperature")
-            temperature_list.append({'index': index, 'temperature': temperature})
-        return temperature_list
-    except Exception as e:
-        print_log(f"[ERROR] Error reading temperature: {str(e)}")
-        return None
+        except Exception:
+            temperature = None
+        
+        temperature_list.append({'index': index, 'temperature': temperature})
+    return temperature_list
 
 
 def read_humidity(sensor_index=None):
@@ -49,15 +48,12 @@ def read_humidity(sensor_index=None):
     index_list = sensor_index if sensor_index is not None else range(len(dht_sensors))
 
     humidity_list = []
-    try:
-        for index in index_list:
+    for index in index_list:
+        try:
             dht_sensors[index].measure()
             humidity = dht_sensors[index].humidity()
-            if humidity is None:
-                print_log(f"[ERROR] Failed to read humidity")
-            humidity_list.append({'index': index, 'humidity': humidity})
-        return humidity_list
-    except Exception as e:
-        print_log(f"[ERROR] Error reading humidity: {str(e)}")
-        return None
-
+        except Exception:
+            humidity = None
+        
+        humidity_list.append({'index': index, 'humidity': humidity})
+    return humidity_list

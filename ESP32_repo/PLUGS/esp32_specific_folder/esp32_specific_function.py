@@ -1,7 +1,7 @@
 import machine
 from esp32_specific_folder.plugs import turn_off, turn_on
 
-def sensor_specific_function():
+def purpose_specific_function():
     # Placeholder function
     pass
 

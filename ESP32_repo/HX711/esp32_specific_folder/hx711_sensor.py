@@ -35,9 +35,12 @@ def read_weight(sensor_index=None):
     weight_list = []
 
     for index in index_list:
-        raw_weight = hx711_sensors[index].read_average(times=10)
-        # Use fitted M and C to convert raw data to kg.
-        weight = (raw_weight - CALIBRATED_C) / CALIBRATED_M
+        try:
+            raw_weight = hx711_sensors[index].read_average(times=10)
+            # Use fitted M and C to convert raw data to kg.
+            weight = (raw_weight - CALIBRATED_C) / CALIBRATED_M
+        except Exception as exc:
+            weight = None
 
         weight_list.append({'index': index, 'weight': weight})
 
