@@ -4,7 +4,7 @@ import json
 import machine
 
 # Third-party library imports
-import umqtt.simple as simple
+import custom_umqtt.simple as simple
 
 # Local application/library-specific imports
 from esp32_specific_folder.esp32_specific_function import other_topic_callback
@@ -17,6 +17,8 @@ MAX_CONNECTION_ATTEMPTS = 10
 CONNECTION_ATTEMPT_DELAY = 5
 WIFI_HANDLER_INSTANCE = None
 
+class TimeoutError(Exception):
+    pass
 
 def initialize_wifi_handler(wifi_handler):
     ''' 
@@ -74,12 +76,12 @@ class MQTT_handler:
             try:
                 self.client = simple.MQTTClient(esp32_id, mqtt_server, keepalive=60)
                 self.client.set_callback(self.on_message_callback)
-                self.client.connect()
+                self.connect()
                 datetime_topic = b"/esp32/datetime"
-                self.client.subscribe(datetime_topic)
+                self.subscribe(datetime_topic)
                 print_log(f'ESP32 subscribed to the topic {str(datetime_topic)}')
                 file_path_topic = f'{base_topic}/send_file'
-                self.client.subscribe(file_path_topic.encode())
+                self.subscribe(file_path_topic.encode())
                 print_log(f'ESP32 subscribed to the topic {str(file_path_topic)}')
                 break
             except Exception as exc:
@@ -198,7 +200,7 @@ class MQTT_handler:
 
     def publish(self, topic, payload):
         try:
-            self.client.publish(topic, payload)
+            self.client.publish(topic, payload, qos=1)
         except OSError:
             self.try_reconnect(lambda: self.publish(topic, payload))
 
@@ -231,7 +233,7 @@ class MQTT_handler:
 
     def subscribe(self, topic):
         try:
-            self.client.subscribe(topic)
+            self.client.subscribe(topic, qos=2)
         except Exception as e:
             self.try_reconnect(lambda: self.subscribe(topic))
 
