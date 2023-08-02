@@ -63,23 +63,23 @@ class MQTT_handler:
         pass
     
 
-    def publish(self, topic, payload=None, qos=0, retain=False, properties=None):
+    def publish(self, topic, payload=None, qos=2, retain=False, properties=None):
         try:
-            self.client.publish(self, topic, payload, qos, retain, properties)
+            self.client.publish(topic, payload, qos, retain, properties)
+        except Exception as exc:
+            debug_print('oh shit exception here')
+            raise
+
+    def subscribe(self, topic, qos=2, options=None, properties=None):
+        try:
+            self.client.subscribe(topic, qos, options, properties)
         except Exception as exc:
             debug_print('oh shit exception here')
             raise
 
     def message_callback_add(self, sub, callback):
         try:
-            self.client.message_callback_add(self, sub, callback)
-        except Exception as exc:
-            debug_print('oh shit exception here')
-            raise
-        
-    def subscribe(self, topic, qos=0, options=None, properties=None):
-        try:
-            self.client.subscribe(self, topic, qos, options, properties)
+            self.client.message_callback_add(sub, callback)
         except Exception as exc:
             debug_print('oh shit exception here')
             raise
