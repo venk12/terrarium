@@ -9,6 +9,9 @@ from mqtt import initialize_wifi_handler
 
 MAX_CONNECTION_ATTEMPTS = 10
 
+class TimeoutError(Exception):
+    pass
+
 def url_decode(input):
     """
     Decodes a URL-encoded string.
