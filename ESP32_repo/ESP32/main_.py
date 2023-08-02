@@ -42,10 +42,15 @@ try:
 
     # This if-else statement discriminates between sensors and actuators.
     if publish_interval is not None:
+        # Sensors
+
         # Import and execute the main loop 
         from loop_handler import main_loop
         main_loop(mqtt_handler, base_topic, publish_interval)
     else:
+        # Actuators
+
+        # Define and subscribe to the state topic
         state_topic = (f'{base_topic}/state').encode()
         mqtt_handler.subscribe(state_topic)
 
