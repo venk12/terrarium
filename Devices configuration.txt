@@ -1,0 +1,55 @@
+ESP32
+
+File upload:
+conda activate esp32   
+Single file:
+ampy --port /dev/tty.SLAB_USBtoUART put /Users/giovannichiementin/Desktop/Terra/terra-monorepo/ESP32_repo/ESP32/wifi_creds.txt
+
+File in folder:
+ampy --port /dev/tty.SLAB_USBtoUART put /Users/giovannichiementin/Desktop/Terra/terra-monorepo/ESP32_repo/HX711/esp32_specific_folder/hx711_sensor.py /esp32_specific_folder/hx711_sensor.py
+
+To upload many files:
+cd /Users/giovannichiementin/Desktop/Terra/terra-monorepo/ESP32_repo/ESP32
+for file in $(ls -A); do 
+  ampy --port /dev/tty.SLAB_USBtoUART put $file
+done
+
+
+Access serial:
+screen /dev/tty.SLAB_USBtoUART 115200
+
+To update files first exit serial with:     
+ctrl+A → k → y → enter
+
+
+MacBook mosquitto:
+
+Listener
+/opt/homebrew/bin/mosquitto_sub -h localhost -t "esp32/b0b21c0a0dfc/dht22_sensors"
+Broker
+/opt/homebrew/opt/mosquitto/sbin/mosquitto -c /opt/homebrew/etc/mosquitto/mosquitto.conf
+
+
+
+RASPBERRY PI
+
+pi4 Name: missile_terra@missile.local
+pi3 Name: missile_terra@missile2.local
+Pw 09111998
+
+SETUP:
+First transfer the folder using the command below:
+
+scp -r /Users/giovannichiementin/Desktop/Terra/terra-monorepo/server missile_terra@missile.local:/home/missile_terra/Desktop/server/
+
+Then run:
+chmod +x setup_mosquitto.py
+./setup_mosquitto.py
+
+Now the raspberry should be ready to run the main.py using:
+
+cd /Desktop/server
+python3 main.py
+
+NOTE THAT THE raspi_configuration.py FILE ALLOWS ANONYMOUS MQTT COMMUNICATION WITH THE BROKER
+THIS IS SUPER DANGEROUS AND NEEDS TO BE CHANGED WHEN WE'RE DONE DEVELOPING.

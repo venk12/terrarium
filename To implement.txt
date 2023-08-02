@@ -31,6 +31,8 @@
 
 -   Error handling for the callbacks
 
+-   MQTT broker should require the appropriate access permissions.
+
 ################ GENERAL ################
 
 -   if a method or function isnt ready for edgecases or needs error handling, comment it with       ### GENERAL TO HANDLE ### + reason why
