@@ -1,4 +1,4 @@
-from utils import debug_print
+from app.utils import debug_print
 
 def pumps_state(mqtt_handler, esp32_id, index, state, persistence=False):
     """
