@@ -164,7 +164,7 @@ def print_log(message, error=False, exc=None):
     :param exc: Exception - An exception object to include in the log print
     """
     log_type = "[ERROR]" if error else "[LOG]"
-    log_message = f'{log_type} - {read_time()} - {message}'
+    log_message = f'{log_type} {message}'
 
     if error and exc:
         traceback_str = convert_traceback(exc)
