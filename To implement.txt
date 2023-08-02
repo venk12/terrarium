@@ -17,8 +17,8 @@
 
 ################ RASPBERRY ################
 
--   XXXXXX Wifi usb module for immediate connectivity, in the ESP put a file with a preconfigured ssid and password.
-
+-   Wifi usb module for immediate connectivity, in the ESP put a file with a preconfigured ssid and password.
+    
 -   If system reboots, send message to ESPs for asking names (to solve the error in which a new device is added before turning on the program)
 
 -   When actuator esp is connected, immediately send on or off state according to the previous state (maybe after blackout)
