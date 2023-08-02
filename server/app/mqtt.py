@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 from app.utils import debug_print
 # import threading
 from app.callbacks import *
-from states import instanciate_local_mqtt_handler
+from app.states import instanciate_local_mqtt_handler
 
 
 def initialize_mqtt_connection():
