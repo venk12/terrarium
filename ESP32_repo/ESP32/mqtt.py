@@ -203,11 +203,20 @@ class MQTT_handler:
             self.try_reconnect(lambda: self.publish(topic, payload))
 
 
-    def wait_msg(self, topic,reconnect=False):
+    def wait_msg(self, topic, reconnect=False):
         try:
-            if reconnect:
-                self.subscribe(topic=topic)
-            self.client.wait_msg()
+            try:
+                if reconnect:
+                    self.subscribe(topic=topic)
+                self.client.wait_msg()
+            except OSError as exc:
+                if exc.args[0] == -1:
+                    # Just the ping response
+                    print_log('THIS FUCKING PING', error=True)
+                    self.try_reconnect(lambda: self.wait_msg(topic=topic, reconnect=True))
+                    pass
+                else:
+                    raise
         except Exception as exc:
             print_log('Reconnecting after wait_msg', error=True, exc=exc)
             self.try_reconnect(lambda: self.wait_msg(topic=topic, reconnect=True))
