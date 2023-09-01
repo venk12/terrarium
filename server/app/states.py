@@ -1,8 +1,11 @@
 from app.influx_read import read_latest_values_from_db
 from app.commands import plugs_state, pumps_state
 
+#### THIS OBJECT CAN ALREADY FUNCTION AS A SYNCHRONIZATION BUFFER
+
 
 MQTT_HANDLER_INSTANCE = None
+
 
 def instanciate_local_mqtt_handler(mqtt_handler):
     global MQTT_HANDLER_INSTANCE

@@ -1,37 +1,66 @@
 ################ ESP32 ################
+        
+-   Bluetooth connectivity for communicating ssid and pw
+        now working, error handling and comments needed
 
-
--   Add listen on trigger topic for resending id and type
+-   Encrypt MQTT communication
 
 -   Implement OTA updates
 
--   Save water amount after every irrigation
-
--   Bluetooth connectivity for communicating ssid and pw
 
     #### DONE ####
+    
+    -   Script that takes device id (/dev/tty.SLAB_USBtoUART), original file(s) or folder paths, destination path, 
+        REMOVES ALL THE COMMENTS FROM THE CODE AD SENDS IT TO THE ESP
+            working using sudo:
+            sudo python3 esp_loader.py /Users/giovannichiementin/Desktop/Terra/terra-monorepo-1/ESP32_repo/ESP32/main_.py
+    
+    -   Problem in method try_reconnect, it recursively calls itself, esp doesn't reset after a certain time
+            Removed callback to calling function and inserted MAX_RECONNECTION_ATTEMPTS monitoring
+
+    -   Subscription lost after msg_wait(), better to subscribe to {base_topic}/# so that it's easy to resubscribe after connection error.
+            A bit annoying because the esp would now receive its own messages,
+            CREATED FUNCTION initialize_subscriptions() TO CALL ON msg_wait() errors (cleaner solution)
+
+    -   Add listen on trigger topic for resending id and type
+            Now listening on "/esp32/broadcasted_command" for every broadcasted communication.
+
     -   error logging needs to happen both through mqtt and locally in error_log.txt .
         insert function to send error_log.txt file through mosquitto if requested.
+            USELESS TO SEND ERRORS TO THE RASPBERRY, AS MOST OF THEM ARE CONNECTION ERRORS (thus mqtt is not available anyway)
+            just log them and try to reconnect if fatal error.
 
     -   Figure out a way to easily select the specific sensor folder 
+            Just named the folders with the same name and standardized it
 
 ################ RASPBERRY ################
+-   Remove error topic to simplify the code.
 
--   Wifi usb module for immediate connectivity, in the ESP put a file with a preconfigured ssid and password.
-    
--   If system reboots, send message to ESPs for asking names (to solve the error in which a new device is added before turning on the program)
+-   Separate listener and talker from main logic.
 
 -   When actuator esp is connected, immediately send on or off state according to the previous state (maybe after blackout)
 
--   Possibility to forget esp32 devices (from dictionary)
+-   If a device present in the dictionary is not found after n second, show error to user (with possibility to forget the esp)
 
--   If a device present in the dictionary is not found, show error to user (with possibility to forget the esp)
+-   Rorganize and restructure the callbacks.py file, maybe put it together with the mqtt.py file.
+
+-   Wifi usb module for immediate connectivity, in the ESP put a file with a preconfigured ssid and password.
 
 -   Send datetime every day
 
 -   Error handling for the callbacks
 
 -   MQTT broker should require the appropriate access permissions.
+
+-   Save water amount after every irrigation
+
+
+    #### DONE ####
+    -   Possibility to forget esp32 devices (from dictionary)
+            use the method device.remove_device(esp32_id, esp32_type) in utils.py, Devices class.
+
+    -   If system reboots, send message to ESPs for asking names (to solve the error in which a new device is added before turning on the program)
+            now publises on /esp32/broadcasted_command the message {'command':'identify'}, the esps are always listening to this topic.
 
 ################ GENERAL ################
 

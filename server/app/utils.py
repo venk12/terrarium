@@ -1,6 +1,60 @@
 import inspect
 import json
 
+#### TO TEST ####
+import os
+import re
+
+WPA_SUPPLICANT_CONF = "/etc/wpa_supplicant/wpa_supplicant.conf"
+
+def adjust_priorities():
+    # Read the file content
+    with open(WPA_SUPPLICANT_CONF, "r") as file:
+        content = file.read()
+
+    # Use regex to find all priority values and decrement them
+    new_content = re.sub(r'priority=(\d+)', lambda x: f"priority={int(x.group(1)) - 1}", content)
+
+    # Write back the adjusted content
+    with open(WPA_SUPPLICANT_CONF, "w") as file:
+        file.write(new_content)
+
+def write_wifi_config(ssid, password):
+    # Adjust the priorities of existing networks
+    adjust_priorities()
+
+    # Construct the network configuration string
+    config_str = f"""
+                    network={{
+                    ssid="{ssid}"
+                    psk="{password}"
+                    priority=100
+                }}
+                """
+
+    # Append the new configuration to the file
+    with open(WPA_SUPPLICANT_CONF, "a") as file:
+        file.write(config_str)
+
+    # Saves newly inserted credentials to the file wifi_creds.txt
+    with open('wifi_creds.txt', 'w') as wifi_file:
+        wifi_file.write(f'{ssid},{password}')
+
+    # Restart the wpa_supplicant service to apply changes
+    os.system("sudo systemctl restart wpa_supplicant")
+
+
+def add_wifi_network():
+    ssid = input("Enter WiFi SSID: ")
+    password = input("Enter WiFi Password: ")
+
+    write_wifi_config(ssid, password)
+
+    print(f"Added network '{ssid}' to the configuration and restarted wpa_supplicant.")
+
+
+#### END TO TEST ####
+
 
 def debug_print(message):
     frame = inspect.currentframe().f_back
@@ -9,6 +63,21 @@ def debug_print(message):
     
     line_number = frame.f_lineno
     print(f"[DEBUG] {filename}:{line_number} {message}")
+
+def check_esp32_id(esp32_dict, esp32_id, esp32_type=None):
+    if esp32_type is None:
+        for esp32_type, id_list in esp32_dict.items():
+            if esp32_id in id_list:
+                print(f"esp32_id {esp32_id} is present under type {esp32_type}")
+                return True
+        print(f"esp32_id {esp32_id} is not present in the dictionary")
+        return False
+    else:
+        if esp32_id in esp32_dict[esp32_type]:
+                print(f"esp32_id {esp32_id} is present under type {esp32_type}")
+                return True
+        print(f"esp32_id {esp32_id} is not present in the dictionary")
+        return False
 
 
 class Tare_weights:
@@ -86,6 +155,8 @@ class Devices:
             pass
     
     def remove_device(self, esp32_id, esp32_type):
+
+        # TODO check these returns.. maybe print maybe raise idk im high now
         try:
             with open(f'app/devices.json', 'r') as f:
                 devices = json.load(f)

@@ -4,7 +4,8 @@ import json
 import machine
 
 # Third-party library imports
-import custom_umqtt.simple as simple
+#import custom_umqtt.simple as simple
+import umqtt.simple as simple
 
 # Local application/library-specific imports
 from esp32_specific_folder.esp32_specific_function import other_topic_callback
@@ -13,7 +14,8 @@ from time_manager import read_time, set_time
 from config import read_json
 
 # Constants declaration
-MAX_CONNECTION_ATTEMPTS = 10
+MAX_CONNECTION_ATTEMPTS = 5
+MAX_RECONNECTION_ATTEMPTS = 5
 CONNECTION_ATTEMPT_DELAY = 5
 WIFI_HANDLER_INSTANCE = None
 
@@ -63,13 +65,11 @@ class MQTT_handler:
 
     def connect_to_mqtt(self, mqtt_server, esp32_id):
         """
-        Connects to an MQTT broker and subscribes to a topic.
+        Connects to an MQTT broker.
 
         :param mqtt_server: str - The MQTT server to connect to
         :param esp32_id: str - The unique ID of the ESP32 device
         """
-
-        base_topic = self.json_content["base_topic"]
 
         attempts = 0
         while attempts < MAX_CONNECTION_ATTEMPTS:
@@ -77,12 +77,8 @@ class MQTT_handler:
                 self.client = simple.MQTTClient(esp32_id, mqtt_server, keepalive=60)
                 self.client.set_callback(self.on_message_callback)
                 self.connect()
-                datetime_topic = b"/esp32/datetime"
-                self.subscribe(datetime_topic)
-                print_log(f'ESP32 subscribed to the topic {str(datetime_topic)}')
-                file_path_topic = f'{base_topic}/send_file'
-                self.subscribe(file_path_topic.encode())
-                print_log(f'ESP32 subscribed to the topic {str(file_path_topic)}')
+
+                self.initialize_subscriptions()
                 break
             except Exception as exc:
                 file_log('Error initializing MQTT client', error=True, exc=exc)
@@ -93,7 +89,21 @@ class MQTT_handler:
             raise TimeoutError('Unable to enstablish connection with mqtt broker.')
 
 
-    def publish_new_device(self, esp32_id, esp32_type):
+    def initialize_subscriptions(self):
+        base_topic = self.json_content["base_topic"]
+
+        broadcasted_command_topic = '/esp32/broadcasted_command'
+        send_file_topic = f'{base_topic}/send_file'
+        state_topic = f'{base_topic}/state'
+
+
+        topics_list = [broadcasted_command_topic, send_file_topic, state_topic]
+        for topic in topics_list:
+            self.subscribe(topic.encode())
+            print_log(f'ESP32 subscribed to the topic {topic}')
+
+
+    def publish_device_id(self, esp32_id, esp32_type, reconnection_attempts=0):
         """
         Publishes a new device to the specified MQTT topic.
 
@@ -108,25 +118,13 @@ class MQTT_handler:
         try:
             self.publish(mqtt_topic, json.dumps(payload))
         except OSError:
-            # Handle the exception, e.g., by reconnecting
-            self.try_reconnect(lambda: self.publish_new_device(esp32_id, esp32_type))
-            
-
-
-    def mqtt_log_error(self, message, error_topic):
-        """
-        Logs an error message to the MQTT topic.
-
-        :param message: str - The error message to log
-        :param client: simple.MQTTClient object - The MQTT client object connected to the server
-        :param error_topic: str - The MQTT topic to publish the error message to
-        """
-
-        # the message is specific for being parsed from the raspberry side so that the dashboard can communicate
-        # to the user what to do (different from the error logging with line number!)
-        
-        error_message = f"[ERROR] {read_time()} - {message}"
-        self.publish(error_topic, error_message)
+            self.try_reconnect()
+            if reconnection_attempts < MAX_RECONNECTION_ATTEMPTS:
+                reconnection_attempts += 1
+                self.publish_device_id(esp32_id, esp32_type, reconnection_attempts)
+            else:
+                # Some other error other than connection, propagate it
+                raise
 
 
     def mqtt_send_file(self, file_path):
@@ -177,9 +175,18 @@ class MQTT_handler:
 
         base_topic = self.json_content['base_topic']
 
-        if decoded_topic == '/esp32/datetime':
-            year, month, day, hour, minute, sec = map(int, decoded_msg.split(' ')[0].split('-') + decoded_msg.split(' ')[1].split(':'))
-            set_time(year, month, day, hour, minute, sec)
+        if decoded_topic == '/esp32/broadcasted_command':
+            command_dict = json.loads(decoded_msg)
+            command = command_dict['command']
+            content = command_dict.get('content')
+
+            if command == 'identify':
+                esp32_id, esp32_type = base_topic.split('/')[2:4]
+                self.publish_device_id(esp32_id, esp32_type)
+            elif command == 'set_datetime':
+                year, month, day, hour, minute, sec = map(int, content.split(' ')[0].split('-') + content.split(' ')[1].split(':'))
+                set_time(year, month, day, hour, minute, sec)
+
         elif decoded_topic == f'{base_topic}/send_file':
             # Assuming decoded_msg contains /path/to/file/filename:
             self.mqtt_send_file(decoded_msg)
@@ -187,7 +194,7 @@ class MQTT_handler:
             other_topic_callback(decoded_topic, decoded_msg, base_topic)
     
 
-    def connect(self):
+    def connect(self, reconnection_attempts=0):
         '''
         Try to connect to the MQTT broker
         if not possible try to enstablish wifi connection.
@@ -195,53 +202,83 @@ class MQTT_handler:
         try:
             self.client.connect()
         except Exception as e:
-            self.try_reconnect(self.connect)
+            self.try_reconnect()
+            if reconnection_attempts < MAX_RECONNECTION_ATTEMPTS:
+                reconnection_attempts += 1
+                self.connect(reconnection_attempts)
+            else:
+                # Some other error other than connection, propagate it
+                raise
 
 
-    def publish(self, topic, payload):
+    def publish(self, topic, payload, reconnection_attempts=0):
         try:
-            self.client.publish(topic, payload, qos=1)
+            self.client.publish(topic, payload)
         except OSError:
-            self.try_reconnect(lambda: self.publish(topic, payload))
+            self.try_reconnect()
+            if reconnection_attempts < MAX_RECONNECTION_ATTEMPTS:
+                reconnection_attempts += 1
+                self.publish(topic, payload, reconnection_attempts)
+            else:
+                # Some other error other than connection, propagate it
+                raise
 
 
-    def wait_msg(self, topic, reconnect=False):
+
+    def wait_msg(self, reconnection_attempts=0):
         try:
-            try:
-                if reconnect:
-                    self.subscribe(topic=topic)
-                self.client.wait_msg()
-            except OSError as exc:
-                if exc.args[0] == -1:
-                    # Just the ping response
-                    print_log('THIS FUCKING PING', error=True)
-                    self.try_reconnect(lambda: self.wait_msg(topic=topic, reconnect=True))
-                    pass
-                else:
-                    raise
+            #if reconnection_attempts:
+            self.client.wait_msg()
         except Exception as exc:
-            print_log('Reconnecting after wait_msg', error=True, exc=exc)
-            self.try_reconnect(lambda: self.wait_msg(topic=topic, reconnect=True))
+            if isinstance(exc, OSError) and exc.args[0] == -1:
+                # Just the ping response
+                print_log('Just the ping response', error=True)
+            else:
+                print_log('Not the ping!', error=True)
+            
+            reconnection_attempts += 1
+            if reconnection_attempts < MAX_RECONNECTION_ATTEMPTS:
+                self.try_reconnect()
+                self.initialize_subscriptions()
+                # Doesn't call itself again because it's inside a while True loop.
+            else:
+                raise
 
 
-    def check_msg(self):
+    def check_msg(self, reconnection_attempts=0):
         try:
             self.client.check_msg()
-        except Exception as e:
-            self.try_reconnect(self.check_msg)
+        except Exception as exc:
+            if isinstance(exc, OSError) and exc.args[0] == -1:
+                # Just the ping response
+                print_log('Just the ping response', error=True)
+            else:
+                print_log('Not the ping!', error=True)
+            
+            reconnection_attempts += 1
+            if reconnection_attempts < MAX_RECONNECTION_ATTEMPTS:
+                self.try_reconnect()
+                self.initialize_subscriptions()
+                # Doesn't call itself again because it's inside a while True loop.
+            else:
+                raise
 
 
-    def subscribe(self, topic):
+    def subscribe(self, topic, reconnection_attempts=0):
         try:
-            self.client.subscribe(topic, qos=2)
+            self.client.subscribe(topic)
         except Exception as e:
-            self.try_reconnect(lambda: self.subscribe(topic))
+            self.try_reconnect()
+            if reconnection_attempts < MAX_RECONNECTION_ATTEMPTS:
+                reconnection_attempts += 1
+                self.subscribe(topic, reconnection_attempts)
+            else:
+                # Some other error other than connection, propagate it
+                raise
 
-
-    def try_reconnect(self, calling_function = None):
+    def try_reconnect(self):
         '''
-        This function tries to connect to the MQTT broker and if it fails there it 
-        tries to reconnect to the wifi. This up to the MAX_CONNECTION_ATTEMPTS
+        This function tries to connect to the MQTT broker up to MAX_CONNECTION_ATTEMPTS attempts.
         '''
         attempts = 0
         while attempts < MAX_CONNECTION_ATTEMPTS:
@@ -251,20 +288,7 @@ class MQTT_handler:
                 self.client.connect()
                 break
             except Exception as exc:
-                print_log(f"Exception while connecting MQTT client", error=True, exc=exc)
-                time.sleep(2)
-                try:
-                    print_log("Attempting to reconnect Wi-Fi")
-
-                    # This is a blocking method, it either finishes gracefully if connected 
-                    # or raises an exception after 400s
-                    WIFI_HANDLER_INSTANCE.try_connect()
-                except Exception as wifi_exception:
-                    print_log(f"Exception while reconnecting Wi-Fi", error=True, exc=wifi_exception)
-                    raise  # Propagating the Wi-Fi exception upward
+                time.sleep(CONNECTION_ATTEMPT_DELAY)
         else:
+            print_log(f"Exception while connecting MQTT broker", error=True, exc=exc)
             raise TimeoutError('Unable to reconnect to the MQTT broker.')
-
-        # If given, call the provided function now that we're reconnected
-        if calling_function is not None:
-            calling_function()

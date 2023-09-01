@@ -4,7 +4,7 @@ import time
 import network
 from utils import file_log
 
-# Constants
+# Constantsa
 RESET_PIN = 16
 ERROR_LED_PIN = 0
 

@@ -14,6 +14,8 @@ def initialize_mqtt_connection():
             logging: disabled
         '''
         mqtt_handler = MQTT_handler()
+
+        ### THIS FOLLOWING LINE IS VERY UGLY (difficult to locate the variable initialization) ###
         devices_dict = devices.devices_dict
 
         for esp32_type, esp32_ids in devices_dict.items():
@@ -22,10 +24,6 @@ def initialize_mqtt_connection():
                 data_topic = f"/esp32/{esp32_id}/{esp32_type}/data"
                 mqtt_handler.message_callback_add(data_topic, on_message_data)
                 mqtt_handler.subscribe(data_topic)
-                
-                error_topic = f"/esp32/{esp32_id}/{esp32_type}/error"
-                mqtt_handler.message_callback_add(error_topic, on_message_error)
-                mqtt_handler.subscribe(error_topic)
         
                 file_transfer_topic = f"/esp32/{esp32_id}/{esp32_type}/log_dump"
                 mqtt_handler.message_callback_add(file_transfer_topic, on_file_dump)
@@ -55,22 +53,26 @@ class MQTT_handler:
 
         # Specify the callback function to be used when a message is received.
         self.client.on_message = on_message
+
         # Subscribe to the "/esp32/new_device" topic.
         self.client.subscribe("/esp32/new_device")
 
         # Start the client.
         self.client.loop_start()
+
+        self.publish(topic="/esp32/broadcasted_command", payload=json.dumps({'command':'identify'}))
+        print('published on /esp32/broadcasted_command')
         pass
     
 
-    def publish(self, topic, payload=None, qos=2, retain=False, properties=None):
+    def publish(self, topic, payload=None, qos=0, retain=False, properties=None):
         try:
             self.client.publish(topic, payload, qos, retain, properties)
         except Exception as exc:
             debug_print('oh shit exception here')
             raise
 
-    def subscribe(self, topic, qos=2, options=None, properties=None):
+    def subscribe(self, topic, qos=0, options=None, properties=None):
         try:
             self.client.subscribe(topic, qos, options, properties)
         except Exception as exc:

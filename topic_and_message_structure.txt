@@ -1,0 +1,36 @@
+
+#### ESP32 TO RASPBERRY ####
+
+[0]   [1]     [2]         [3]
+    /esp32/{esp32_id}/{esp32_type}
+
+
+/esp32/{esp32_id}/{esp32_type}/data
+
+    [{
+    'index': temperature["index"],
+    'temperature': temperature["temperature"],
+    'humidity': humidity["humidity"]
+    }]
+
+
+/esp32/{esp32_id}/{esp32_type}/error
+    REMOVE!! (?)
+
+
+/esp32/{esp32_id}/{esp32_type}/log_dump
+
+    [{'filename':file_path, 'content':{content}}]
+    where filename = f'{esp32_id}/{esp32_type}/{file_path}'
+
+
+#### RASPBERRY TO ESP32  ####
+
+/esp32/datetime
+    
+
+/esp32/command
+    {'command':{command}, 'content':{content}}
+    
+    command in [identify, set_datetime]
+    

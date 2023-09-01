@@ -1,4 +1,4 @@
-from app.utils import debug_print, Tare_weights, Devices
+from app.utils import debug_print, Tare_weights, Devices, check_esp32_id
 import json
 from collections import deque
 import statistics
@@ -231,13 +231,15 @@ def on_message(client, userdata, message):
     # Send datetime to all the ESP32
     now = datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-    client.publish("/esp32/datetime", current_time)
+    payload = json.dumps({'command':'set_datetime', 'content':current_time})
+    client.publish("/esp32/broadcasted_command", payload)
 
     # Set topic-specific callback and subscribe to the new topic.
     data_topic = f"/esp32/{esp32_id}/{esp32_type}/data"
     client.message_callback_add(data_topic, on_message_data)
     client.subscribe(data_topic)
 
+    # TODO deprecate this.
     error_topic = f"/esp32/{esp32_id}/{esp32_type}/error"
     client.message_callback_add(error_topic, on_message_error)
     client.subscribe(error_topic)
@@ -274,6 +276,7 @@ def on_message_data(client, userdata, message):
     elif esp32_type == 'plugs':
         on_plugs(client, userdata, message)
 
+### TO REMOVE (ERROR TOPIC NO LONGER NEEDED)
 ## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/error'
 def on_message_error(client, userdata, message):
     """ A function to throw error when sensors are misbehaving/sending garbage values
@@ -297,6 +300,7 @@ def on_file_dump(client, userdata, message):
 
 
     topic = message.topic
+    print(message.payload)
     payload = json.loads(message.payload.decode())
 
     # Extract esp32_id and esp32_type from the topic

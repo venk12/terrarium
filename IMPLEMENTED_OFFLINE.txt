@@ -1,0 +1,15 @@
+NEW FILES:
+
+    /server/app/ble.py
+    /ESP32/ble.py
+        
+MODIFIED FILES:
+
+    /ESP32/main.py
+        lines 15, 39-42
+
+    /server/app/utils.py 
+        lines 5-53
+
+    /server/main.py
+        lines 8-12

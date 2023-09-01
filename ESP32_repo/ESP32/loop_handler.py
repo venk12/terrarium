@@ -16,8 +16,6 @@ def main_loop(mqtt_handler, base_topic, publish_interval):
 
     # Create different topics using 'base_topic'
     data_topic = base_topic + "/data"
-    #error_topic = base_topic + "/error"
-    #status_topic = base_topic + "/status"
     
     pub_count = 0
 

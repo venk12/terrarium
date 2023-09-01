@@ -1,0 +1,4 @@
+file = 'error_logfile.log'
+
+with open(file, 'r') as f:
+    print(f.read())

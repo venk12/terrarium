@@ -33,6 +33,14 @@ Broker
 
 RASPBERRY PI
 
+
+TEST
+
+pip3 install bluepy
+
+
+
+
 pi4 Name: missile_terra@missile.local
 pi3 Name: missile_terra@missile2.local
 Pw 09111998
@@ -40,7 +48,7 @@ Pw 09111998
 SETUP:
 First transfer the folder using the command below:
 
-scp -r /Users/giovannichiementin/Desktop/Terra/terra-monorepo/server missile_terra@missile.local:/home/missile_terra/Desktop/server/
+scp -r /Users/giovannichiementin/Desktop/Terra/terra-monorepo-1/server missile_terra@missile.local:/home/missile_terra/Desktop/server/
 
 Then run:
 chmod +x setup_mosquitto.py
