@@ -3,7 +3,8 @@ import paho.mqtt.client as mqtt
 from app.utils import debug_print
 # import threading
 from app.callbacks import *
-from app.states import instanciate_local_mqtt_handler
+import app.states as states
+import app.commands as commands
 
 
 def initialize_mqtt_connection():
@@ -30,7 +31,8 @@ def initialize_mqtt_connection():
                 mqtt_handler.subscribe(file_transfer_topic)
                 debug_print(f"Listening on topic {data_topic}")
 
-        instanciate_local_mqtt_handler(mqtt_handler)
+        states.instanciate_local_mqtt_handler(mqtt_handler)
+        commands.instanciate_local_mqtt_handler(mqtt_handler)
 
         # Keep the script running.
         while True:

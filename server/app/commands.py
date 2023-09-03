@@ -1,6 +1,14 @@
 from app.utils import debug_print
 
-def pumps_state(mqtt_handler, esp32_id, index, state, persistence=False):
+MQTT_HANDLER_INSTANCE = None
+
+
+def instanciate_local_mqtt_handler(mqtt_handler):
+    global MQTT_HANDLER_INSTANCE
+    MQTT_HANDLER_INSTANCE = mqtt_handler
+    
+
+def pumps_state(esp32_id, index, state, persistence=False):
     """
     Controls and potentially persists the state of a specific pump on the given ESP32 device.
     
@@ -16,6 +24,9 @@ def pumps_state(mqtt_handler, esp32_id, index, state, persistence=False):
     
     :raises ValueError: if the state is not 'on' or 'off', or if persistence is not a boolean
     """
+
+    mqtt_handler = MQTT_HANDLER_INSTANCE
+
     if state != 'on' and state != 'off':
         raise ValueError(f"state can only be 'on' or 'off', received {state}")
     if not isinstance(persistence, bool):
@@ -32,7 +43,7 @@ def pumps_state(mqtt_handler, esp32_id, index, state, persistence=False):
     
     mqtt_handler.publish(publish_topic, state_message)
     
-def plugs_state(mqtt_handler, esp32_id, index, state, persistence=False):
+def plugs_state(esp32_id, index, state, persistence=False):
     """
     Controls and potentially persists the state of a specific plug on the given ESP32 device.
     
@@ -48,6 +59,8 @@ def plugs_state(mqtt_handler, esp32_id, index, state, persistence=False):
     
     :raises ValueError: if the state is not 'on' or 'off', or if persistence is not a boolean
     """
+
+    mqtt_handler = MQTT_HANDLER_INSTANCE
 
     if state != 'on' and state != 'off':
         raise ValueError(f"state can only be 'on' or 'off', received {state}")

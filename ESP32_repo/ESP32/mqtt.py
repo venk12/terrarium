@@ -289,6 +289,6 @@ class MQTT_handler:
                 break
             except Exception as exc:
                 time.sleep(CONNECTION_ATTEMPT_DELAY)
-        else:
+        if attempts >= MAX_CONNECTION_ATTEMPTS:
             print_log(f"Exception while connecting MQTT broker", error=True, exc=exc)
             raise TimeoutError('Unable to reconnect to the MQTT broker.')
