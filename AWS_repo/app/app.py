@@ -1,11 +1,20 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from app.states import Farm_Current_State
+import mqtt
+from utils import Devices
 # import json
 # import asyncio
 # import threading
 
 app = FastAPI()
+
+print("Fast api running now!!!")
+
+devices = Devices()
+devices.retrieve_device_dict()
+
+mqtt_handler = mqtt.MQTT_Handler()
 # Maintain a set of connected WebSocket clients
 websocket_clients = set()
 
@@ -20,9 +29,19 @@ curr_status = Farm_Current_State()
 #         print(f"Server received: {data}")
 #         await websocket.send_text(f"Server says: {data}")
 
+i = 1
+
 @app.get("/test")
 async def root():
-    return "Hello..terra api is now running!"
+    if i%2==0:
+        mqtt_handler.send_state_test('on')
+        i=+1
+    else:
+        mqtt_handler.send_state_test('off')
+        i=+1
+
+    return "Hello..now switching the button on/off"
+
 
 # async def broadcast_status():
 #     # Broadcast the updated status to all connected WebSocket clients

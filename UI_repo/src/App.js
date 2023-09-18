@@ -1,10 +1,13 @@
 // import logo from './logo.svg';
 import './App.css';
-import Dashboard from './Dashboard';
+// import Dashboard from './Dashboard';
+import Test from './Test'
+
 
 function App() {
   return(
-    <Dashboard/>
+    // <Dashboard/>
+    <Test/>
   )
 }
 

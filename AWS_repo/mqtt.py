@@ -89,27 +89,14 @@ class MQTT_Handler:
             #debug_print('oh shit exception here')
             raise
 
-    def loop_test(self):
+    def send_state_test(self, state):
+        # other topics like the rpi id need to be added, for now it's good like this
+
         keys_list = list(devices.devices_dict.keys())
 
         while True:
             for key in keys_list:
                 for rpi_id in devices.devices_dict[key]:
                     base_topic = f'/rpi/{rpi_id}'
-                    
-                    for i in range(10):
-                        print(f'loop {i}')
-                        self.client.publish(f'{base_topic}/command', json.dumps({'command':{'type':'pumps','state':'0:on'}}))
-                        
-                        time.sleep(1)
 
-                        self.client.publish(f'{base_topic}/command', json.dumps({'command':{'type':'pumps','state':'1:on'}}))
-
-                        time.sleep(1)
-
-                        self.client.publish(f'{base_topic}/command', json.dumps({'command':{'type':'pumps','state':'0:off'}}))
-                        
-                        time.sleep(1)
-
-                        self.client.publish(f'{base_topic}/command', json.dumps({'command':{'type':'pumps','state':'1:off'}}))
-            time.sleep(0.1)
+                    self.client.publish(f'{base_topic}/command', json.dumps({'command':{'type':'pumps','state':f'1:{state}'}}))
