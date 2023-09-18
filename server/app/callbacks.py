@@ -6,6 +6,8 @@ import threading
 from app.influx_write import write_values_to_db
 import os
 from datetime import datetime
+from app.utils import get_rpi_serial_number
+import app.commands as commands
 
 # Store past sensor readings
 past_readings = {}
@@ -19,12 +21,15 @@ filter_size = 10
 tare = Tare_weights()
 tare.retrieve_tare_weights()
 
-# This dictionary will store the esp32_id and its type.
-devices = Devices()
-devices.retrieve_device_dict()
+devices = None
+
+def instanciate_local_device_dictionary(devices_instance):
+    global devices
+    devices = devices_instance
 
 
-#### DATA CALLBACKS ####
+
+#### ESP32 DATA CALLBACKS ####
 
 def _to_frontend(esp32_id, message_dict):
     """ A function to write to database
@@ -211,8 +216,10 @@ def on_water_level(client, userdata, message):
 
 #### SYSTEM CALLBACKS ####
 
+## ESP32 ##
+
 ## Main Callback for messages on topic: '/esp32/new_device'
-def on_message(client, userdata, message):
+def on__new_device(client, userdata, message):
     """ A callback function to handle dataflow once connection is established. 
         This triggers on_message_data() or on_message_error()
         input: client, message
@@ -239,16 +246,10 @@ def on_message(client, userdata, message):
     client.message_callback_add(data_topic, on_message_data)
     client.subscribe(data_topic)
 
-    # TODO deprecate this.
-    error_topic = f"/esp32/{esp32_id}/{esp32_type}/error"
-    client.message_callback_add(error_topic, on_message_error)
-    client.subscribe(error_topic)
-
     file_transfer_topic = f"/esp32/{esp32_id}/{esp32_type}/log_dump"
     client.message_callback_add(file_transfer_topic, on_file_dump)
     client.subscribe(file_transfer_topic)
     debug_print(f"Listening on topic {file_transfer_topic}")
-
 
 ## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/data'
 def on_message_data(client, userdata, message):
@@ -275,23 +276,6 @@ def on_message_data(client, userdata, message):
         on_pumps(client, userdata, message)
     elif esp32_type == 'plugs':
         on_plugs(client, userdata, message)
-
-### TO REMOVE (ERROR TOPIC NO LONGER NEEDED)
-## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/error'
-def on_message_error(client, userdata, message):
-    """ A function to throw error when sensors are misbehaving/sending garbage values
-        input: message
-        input_format: {
-            topic: <str>
-            payload: <list>
-        }
-        output: status
-        logging: should be enabled
-    """
-    topic = message.topic
-    payload = message.payload
-    esp32_id = topic.split('/')[2]
-    debug_print(f'ERROR IN ESP32: {esp32_id}:\n{payload}')
 
 ## Callback for messages on topic: '/esp32/{esp32_id}/{esp32_type}/log_dump'
 def on_file_dump(client, userdata, message):
@@ -326,6 +310,44 @@ def on_file_dump(client, userdata, message):
 
     
     debug_print(f'\n\n\n\n\n\n\nMessage on {topic} saved as {file_name}\n\n\n\n\n\n\n')
+
+## UI ##
+
+## Main Callback for messages on topic: '/rpi/broadcast_command'
+def on_broadcast_message(client, userdata, message):
+
+    command_dict = json.loads(message.payload)
+    debug_print(command_dict)
+    command = command_dict['command']
+    content = command_dict.get('content')
+
+    if command == 'identify':
+        rpi_id = get_rpi_serial_number()
+        payload = {"rpi_id": rpi_id}
+        client.publish(topic="/rpi/new_device", payload=json.dumps(payload))
+    
+    else:
+        debug_print('Command not supported')
+
+
+def on_command_message(client, userdata, message):
+
+    data = json.loads(message.payload)
+    debug_print(f'command arrived! {data}')
+    
+    command = data.get('command')
+
+    if command['type'] == 'pumps':
+        # assuming command['state'] == '{index}:{state}' (note that it could also be '{index}:{state}:{persistence}')
+        index, state = command['state'].split(':')
+        esp32_id = devices.devices_dict['pumps'][0]
+        commands.pumps_state(esp32_id=esp32_id, state=state, index=index)
+
+    elif command['type'] == 'plugs':
+        # assuming command['state'] == '{index}:{state}' (note that it could also be '{index}:{state}:{persistence}')
+        index, state = command['state'].split(':')
+        esp32_id = devices.devices_dict['plugs'][0]
+        commands.pumps_state(esp32_id=esp32_id, state=state, index=index)
     
 
 #### OTHER FUNCTIONS ####

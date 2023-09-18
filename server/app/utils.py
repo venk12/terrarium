@@ -4,6 +4,7 @@ import json
 #### TO TEST ####
 import os
 import re
+import app.mqtt as mqtt
 
 WPA_SUPPLICANT_CONF = "/etc/wpa_supplicant/wpa_supplicant.conf"
 
@@ -51,6 +52,17 @@ def add_wifi_network():
     write_wifi_config(ssid, password)
 
     print(f"Added network '{ssid}' to the configuration and restarted wpa_supplicant.")
+
+def get_rpi_serial_number():
+    """Retrieve the Raspberry Pi's unique serial number."""
+    try:
+        with open('/proc/cpuinfo', 'r') as f:
+            for line in f:
+                if line.startswith('Serial'):
+                    return line.split(':')[1].strip()
+    except Exception as e:
+        print(f"Error getting Raspberry Pi's serial number: {e}")
+        return None
 
 
 #### END TO TEST ####
@@ -120,8 +132,11 @@ class Devices:
         #   'water_level':['esp_id_1','esp_id_2','esp_id_3']
         #   'dht22': ['esp_id_4']
         #   'soil_sensors': ['esp_id_5']
+        #   'pumps': ['esp_id_6', 'esp_id_7']
         #   }
         self.devices_dict = {}
+
+        mqtt.instanciate_local_device_dictionary(self)
 
     def update_device_dict(self, esp32_id, esp32_type):
         # If file not found, create it as as an empty dictionary

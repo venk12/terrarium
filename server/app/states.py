@@ -23,6 +23,7 @@ class Farm_Current_State:
         self.remaining_reservoir_liters = 20
 
     def update_light_status(self, status: str):
+        # ESP ID must be retrieved from the device dictionary
         pumps_state(MQTT_HANDLER_INSTANCE, esp32_id='d4d4dae4a810', index=1, state=status )
         self.light = status
 

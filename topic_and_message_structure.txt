@@ -4,6 +4,7 @@
 [0]   [1]     [2]         [3]
     /esp32/{esp32_id}/{esp32_type}
 
+/esp32/new_device
 
 /esp32/{esp32_id}/{esp32_type}/data
 
@@ -34,3 +35,5 @@
     
     command in [identify, set_datetime]
     
+
+#### RASPBERRY TO 

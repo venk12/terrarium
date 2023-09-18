@@ -114,9 +114,9 @@ class MQTT_handler:
         """
         mqtt_topic = "/esp32/new_device"
         payload = {"esp32_id": esp32_id, "type": esp32_type}
-        print_log(f'Published {payload} on {mqtt_topic}')
         try:
             self.publish(mqtt_topic, json.dumps(payload))
+            print_log(f'Published {payload} on {mqtt_topic}')
         except OSError:
             self.try_reconnect()
             if reconnection_attempts < MAX_RECONNECTION_ATTEMPTS:
