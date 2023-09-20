@@ -52,9 +52,9 @@ const Dashboard = () => {
     };
 
     // Clean up WebSocket connection on component unmount
-    // return () => {
-    //   // socket.close();
-    // };
+    return () => {
+      socket.close();
+    };
 
     // For refreshing the dashboard every 10 seconds
     // const interval = setInterval(() => {
@@ -73,8 +73,10 @@ const Dashboard = () => {
       if(curr_status === 'off'){changed_status = 'on'}
 
       try {
-        socket.send(`update|${state_name}:${changed_status}`);
+        // socket.send(`update|${state_name}:${changed_status}`);
         // socket.send('light:off')
+        
+
       } catch (error) {
         console.log('Update not sent to server!')
       }
