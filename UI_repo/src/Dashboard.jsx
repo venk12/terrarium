@@ -5,12 +5,13 @@ import ProgressBar from "./ProgressBar";
 function Dashboard()  {
   const [socket, setSocket] = useState(null);
   const [FarmState, setFarmState] = useState({
-    "light": 'loading..',
-    "pump": 'loading..',
-    "humidity": 'loading..',
+    "farm_id": 'loading..',
+    "light_status": 'loading..',
+    "co2_level": 'loading..',
     "temperature": 'loading..',
-    "water_presence": 'loading..',
-    "co2": 'loading..',
+    "pumps": 'loading..',
+    "humidity": 'loading..',
+    "water_presence_in_saucer": 'loading..',
   })
   const [plantGrowthPercentage, setPlantGrowthPercentage] = useState(10);
   const [totalLeaves, setTotalLeaves] = useState(7)
@@ -162,25 +163,25 @@ function Dashboard()  {
         {/* Light Status */}
         <div className=" lg:w-1/2 bg-gray-900 flex flex-col m-2 p-4 rounded-lg border-2 border-gray-800">
           <div className='text-white'>Light Status</div>
-          <h3 className="text-white my-2 text-m">{FarmState['light']}</h3>
+          <h3 className="text-white my-2 text-m">{FarmState['light_status']}</h3>
           <button
-            onClick={handleStatusSwitch} value = 'light'
+            onClick={handleStatusSwitch} value = 'light_status'
             className={`w-1/2 py-2 px-4 rounded ${
-              FarmState['light'] === 'off' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+              FarmState['light_status'] === 'off' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
             }`}>
-            {FarmState['light'] === 'off' ?  'turn on ': 'turn off'}
+            {FarmState['light_status'] === 'off' ?  'turn on ': 'turn off'}
           </button>
         </div>
         {/* Water Status */}
         <div className="lg:w-1/2 bg-gray-900 flex flex-col m-2 p-4 rounded-lg border-2 border-gray-800">
           <div className='text-white'>Water Status</div>
-          <h3 className="text-white my-2 text-m">{FarmState['pump']}</h3>
+          <h3 className="text-white my-2 text-m">{FarmState['pumps']}</h3>
           <button
-            onClick={handleStatusSwitch} value = 'pump'
+            onClick={handleStatusSwitch} value = 'pumps'
             className={`w-1/2 py-2 px-4 rounded ${
-              FarmState['pump'] === 'off' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+              FarmState['pumps'] === 'off' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
             }`}>
-            {FarmState['pump'] === 'off' ?  'turn on ': 'turn off'}
+            {FarmState['pumps'] === 'off' ?  'turn on ': 'turn off'}
           </button>
         </div>
       </div>
