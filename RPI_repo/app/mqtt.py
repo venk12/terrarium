@@ -90,11 +90,6 @@ class Local_MQTT_Handler:
 
         commands.instanciate_local_mqtt_handler(self)
 
-        # Keep the script running.
-        while True:
-            time.sleep(0.1)
-            pass
-
 
     def publish(self, topic, payload=None, qos=0, retain=False, properties=None):
         try:

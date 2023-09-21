@@ -4,6 +4,7 @@ import app.mqtt as mqtt
 from app.ble import RaspberryBLE
 from app.utils import Devices
 import time
+import status
 
 # The main.py should
 #   - initialize ble connection
@@ -38,6 +39,7 @@ if __name__ == "__main__":
 
     # Keep the script running.
     while True:
+        # status_object = status.FarmStatus(humidity = )
         # send farm status here
         time.sleep(0.5)
             
