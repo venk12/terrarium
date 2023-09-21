@@ -8,6 +8,12 @@ class Farm_Current_State:
         self.co2 = 100
         self.soil_moisture = 130
         self.remaining_reservoir_liters = 20
+    
+    def update_light_status(self, status: str):
+        self.light = status
+
+    def update_pump_status(self, status: str):
+        self.pump = status
 
     def get_status(self):
         return {

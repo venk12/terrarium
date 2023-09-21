@@ -1,46 +1,82 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.states import Farm_Current_State
 import mqtt
 from utils import Devices
-# import json
+import json
+
+from app.websocket_manager import WebSocketManager
+# from starlette.websockets import WebSocketDisconnect
 # import asyncio
 # import threading
 
 app = FastAPI()
 
-print("Fast api running now!!!")
+print("Setting up the FastAPI program..")
 
-devices = Devices()
-devices.retrieve_device_dict()
-
-mqtt_handler = mqtt.MQTT_Handler()
 # Maintain a set of connected WebSocket clients
-websocket_clients = set()
+# websocket_clients = set()
+print("Setting up the socket for clients to connect..")
+websocket_manager = WebSocketManager()
+
+# devices = Devices()
+# devices.retrieve_device_dict()
+
+# mqtt_handler = mqtt.MQTT_Handler()
+# # Maintain a set of connected WebSocket clients
+# websocket_clients = set()
 
 curr_status = Farm_Current_State()
 
-# @app.websocket("/ws")
-# async def websocket_endpoint(websocket: WebSocket):
-#     print('Establishing socket connection..')
-#     await websocket.accept()
-#     while True:
-#         data = await websocket.receive_text()
-#         print(f"Server received: {data}")
-#         await websocket.send_text(f"Server says: {data}")
+# i = 1
+# @app.get("/test")
+# def test():
+#     print("comes into test route")
+#     if i%2==0:
+#         mqtt_handler.send_state_test('on')
+#         i+=1
+#     else:
+#         mqtt_handler.send_state_test('off')
+#         i+=1
 
-i = 1
+#     return "Hello..now switching the button on/off"
 
-@app.get("/test")
-def test():
-    if i%2==0:
-        mqtt_handler.send_state_test('on')
-        i+=1
-    else:
-        mqtt_handler.send_state_test('off')
-        i+=1
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    print('Establishing socket connection..')
+    await websocket_manager.connect(websocket)
+    # await websocket_manager.send_message('Handshake: UI to Terra Server.')
 
-    return "Hello..now switching the button on/off"
+    try:
+        while True:
+            data = await websocket.receive_text()
+
+            print(f"Received message: {data}")
+            command, variable = data.split('|')
+            state_name, status = variable.split(':')
+            print('command: ', command, ' state_name: ', state_name, ' status: ',status)
+
+            if command == 'new_connection':
+                print("command is to new_connection. so sending farm status")
+                command= "broadcast"
+                status = json.dumps(curr_status.get_status())
+                print('Now broadcasting message: '+ status)
+                await websocket_manager.send_message(command+"|"+status, websocket)
+
+            if command == 'update':
+                if state_name == 'light':
+                    print("command is to update light status to ", status)
+                    curr_status.update_light_status(status)
+                    print(str(curr_status.get_status()))
+                    
+                if state_name == 'pump':
+                    print("command is to update pump status to ", status)
+                    curr_status.update_pump_status(status)
+                    print(str(curr_status.get_status()))
+
+    except WebSocketDisconnect:
+        print("Websocket Error..Disconnecting")
+        websocket_manager.disconnect(websocket)
 
 
 # async def broadcast_status():
