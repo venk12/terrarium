@@ -44,19 +44,16 @@ def to_cloud_server(client, esp32_id, message_dict):
     #write_values_to_db(message_dict)
 
     rpi_base_topic = f"/rpi/{RPI_ID}"
-    rpi_topic = f"{rpi_base_topic}/{message_dict['content']}"
+    rpi_topic = f"{rpi_base_topic}/data/{message_dict['content']}"
     message_dict['esp32_id'] = esp32_id
 
     client.publish(rpi_topic, json.dumps(message_dict))
-    '''
-    
-    {
-        'esp32_id':id
-        'content':'temperature',
-        'values':[value_1, value_2, value_3]
-    }
-    
-    '''
+
+    # {
+    #     'esp32_id':id
+    #     'content':'temperature',
+    #     'values':[value_1, value_2, value_3]
+    # }
 
 
 def on_dht22(client, userdata, message):

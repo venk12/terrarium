@@ -19,12 +19,12 @@ print("Setting up the FastAPI program..")
 print("Setting up the socket for clients to connect..")
 websocket_manager = WebSocketManager()
 
-# devices = Devices()
-# devices.retrieve_device_dict()
+devices = Devices()
+devices.retrieve_device_dict()
 
-# mqtt_handler = mqtt.MQTT_Handler()
-# # Maintain a set of connected WebSocket clients
-# websocket_clients = set()
+mqtt_handler = mqtt.MQTT_Handler()
+# Maintain a set of connected WebSocket clients
+websocket_clients = set()
 
 curr_status = Farm_Current_State()
 

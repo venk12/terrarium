@@ -13,6 +13,37 @@ def instanciate_local_device_dictionary(devices_instance):
 
 generator = IDGenerator()
 
+def on_data_message(client, userdata, message):
+    topic = message.topic
+    data_type = topic.split('/')[-1]
+
+    payload = json.loads(message.payload)
+
+    # Payload content:
+    # {
+    #     'esp32_id':id
+    #     'content':'temperature',
+    #     'values':[value_1, value_2, value_3]
+    # }
+
+    if data_type == 'temperature':
+
+        temperature_list = payload['values']
+
+        # send temperature list to react
+        pass
+    elif data_type == 'humidity':
+        humidity_list = payload['values']
+
+        # send humidity list to react
+        pass
+    elif data_type == 'water_level':
+        water_level = payload['values']
+
+        # send water_level to react
+        pass
+
+
 def on_status_message(client, userdata, message):
     # Parse the incoming message payload (JSON string) to a dictionary
     status_data = json.loads(message.payload)
@@ -40,6 +71,11 @@ def on_rpi_new_device(client, userdata, message):
     status_topic = f"/esp32/{rpi_id}/status"
     client.message_callback_add(status_topic, on_status_message)
     client.subscribe(status_topic)
+
+     # Subscribe to the "/rpi/{rpi_id}/data/#" topic and bind callback function.
+    rpi_data_topic = f"/rpi/{rpi_id}/data/#"
+    client.message_callback_add(rpi_data_topic, on_data_message)
+    client.subscribe(rpi_data_topic)
     
 
 class MQTT_Handler:
@@ -55,12 +91,10 @@ class MQTT_Handler:
         # Connect the client to the broker.
         self.client.connect(broker, port, 60)
 
-        # Subscribe to the "/esp32/new_device" topic.
+        # Subscribe to the "/rpi/new_device" topic and bind callback function.
         new_device_topic = "/rpi/new_device"
-        self.subscribe(new_device_topic)
-        
-        # Specify the callback function to be used when a message is received.
         self.message_callback_add(new_device_topic, on_rpi_new_device)
+        self.subscribe(new_device_topic)
 
         # Start the client.
         self.client.loop_start()
