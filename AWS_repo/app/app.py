@@ -32,13 +32,13 @@ curr_status = Farm_Current_State()
 i = 1
 
 @app.get("/test")
-async def root():
+def test():
     if i%2==0:
         mqtt_handler.send_state_test('on')
-        i=+1
+        i+=1
     else:
         mqtt_handler.send_state_test('off')
-        i=+1
+        i+=1
 
     return "Hello..now switching the button on/off"
 

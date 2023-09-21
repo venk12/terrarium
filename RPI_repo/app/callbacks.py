@@ -21,7 +21,10 @@ filter_size = 10
 tare = Tare_weights()
 tare.retrieve_tare_weights()
 
+RPI_ID = get_rpi_serial_number()
+
 devices = None
+
 
 def instanciate_local_device_dictionary(devices_instance):
     global devices
@@ -31,7 +34,7 @@ def instanciate_local_device_dictionary(devices_instance):
 
 #### ESP32 DATA CALLBACKS ####
 
-def _to_frontend(esp32_id, message_dict):
+def to_cloud_server(client, esp32_id, message_dict):
     """ A function to write to database
         input: esp32 id, message
         output: status with esp32 id, message
@@ -40,16 +43,12 @@ def _to_frontend(esp32_id, message_dict):
     debug_print(f'Received data from {esp32_id}: {message_dict}')
     write_values_to_db(message_dict)
 
+    # rpi_base_topic = f"/rpi/{RPI_ID}"
+    # rpi_topic = f"{rpi_base_topic}/{message_dict['content']}"
+    # message_dict['esp32_id'] = esp32_id
 
-    #### ONLY FOR TESTING PURPOSES, REMOVE ASAP ###
-    #if message_dict['content'] == 'water_level':
-    #    if message_dict['values'] == []:
-    #        set_tare_weight(0, 0)
-    #    elif message_dict['values'][0] > 5:
-    #        tare_weight = message_dict['values'][0]
-    #        set_tare_weight(0, tare_weight)
-    #        debug_print(f'Tare succesfully set at {tare_weight}')
-    #pass
+    # client.publish(rpi_topic, json.dumps(message_dict))
+
 
 def on_dht22(client, userdata, message):
     """ A function to read data flowing from DHT22 sensors
@@ -108,8 +107,8 @@ def on_dht22(client, userdata, message):
     temperature_dict['values'] = temperature_list
     humidity_dict['values'] = humidity_list
  
-    _to_frontend(esp32_id, temperature_dict)
-    _to_frontend(esp32_id, humidity_dict)
+    to_cloud_server(client, esp32_id, temperature_dict)
+    to_cloud_server(client, esp32_id, humidity_dict)
 
 def on_soil_sensors(client, userdata, message):
     """ A function to read data flowing from soil sensors
@@ -160,8 +159,8 @@ def on_soil_sensors(client, userdata, message):
     water_presence_dict['values'] = water_presence_list
 
     # Now temperature_dict and humidity_dict are filled with data
-    _to_frontend(esp32_id, soil_moisture_dict)
-    _to_frontend(esp32_id, water_presence_dict)
+    to_cloud_server(client, esp32_id, soil_moisture_dict)
+    to_cloud_server(client, esp32_id, water_presence_dict)
 
     # DO STUFF WITH THE DATA 
 
@@ -211,7 +210,7 @@ def on_water_level(client, userdata, message):
     water_level_dict['values'] = water_level_list
 
     # Now water_level_dict is filled with data
-    _to_frontend(esp32_id, water_level_dict)
+    to_cloud_server(client, esp32_id, water_level_dict)
 
 
 #### SYSTEM CALLBACKS ####
@@ -322,8 +321,7 @@ def on_broadcast_message(client, userdata, message):
     content = command_dict.get('content')
 
     if command == 'identify':
-        rpi_id = get_rpi_serial_number()
-        payload = {"rpi_id": rpi_id}
+        payload = {"rpi_id": RPI_ID}
         client.publish(topic="/rpi/new_device", payload=json.dumps(payload))
     
     else:

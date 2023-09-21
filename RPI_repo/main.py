@@ -3,7 +3,7 @@ import app.mqtt as mqtt
 #from app.mqtt import Local_MQTT_Handler, instanciate_local_device_dictionary
 from app.ble import RaspberryBLE
 from app.utils import Devices
-
+import time
 
 # The main.py should
 #   - initialize ble connection
@@ -36,14 +36,14 @@ if __name__ == "__main__":
     except Exception as exc:
         print(f"Exception {exc}\nCould not establish connection with mqtt broker. Restart mosquitto service!")
 
-
+    # Keep the script running.
+    while True:
+        # send farm status here
+        time.sleep(0.5)
+            
     # Setup the connection with the database
     # try:
     #     establish_db_connection()
     # except:
     #     print("Could not establish connection with DB. Please ensure that the DB exists and the credentials are right.")
-
-
-    # Open the websocket and REST connections
-    # uvicorn.run("app.app:app", host="0.0.0.0", port=3389)
 

@@ -20,7 +20,7 @@ def on_status_message(client, userdata, message):
 
 
 ## Main Callback for messages on topic: '/rpi/new_device'
-def on_message(client, userdata, message):
+def on_rpi_new_device(client, userdata, message):
     """ A callback function to handle dataflow once connection is established. 
         Collects new rpi_id's and binds each one of them to a new UI_ID 
     """
@@ -60,7 +60,7 @@ class MQTT_Handler:
         self.subscribe(new_device_topic)
         
         # Specify the callback function to be used when a message is received.
-        self.message_callback_add(new_device_topic, on_message)
+        self.message_callback_add(new_device_topic, on_rpi_new_device)
 
         # Start the client.
         self.client.loop_start()
@@ -89,14 +89,16 @@ class MQTT_Handler:
             #debug_print('oh shit exception here')
             raise
 
-    def send_state_test(self, state):
-        # other topics like the rpi id need to be added, for now it's good like this
+    def send_command(self, state, rpi_id, esp32_id, actuator_index):
+        pass
+
+    def send_state_test(self, state, rpi_id, esp32_id, sensor_index):
+        # other arguments like the rpi id need to be added, for now it's good like this
 
         keys_list = list(devices.devices_dict.keys())
 
-        while True:
-            for key in keys_list:
-                for rpi_id in devices.devices_dict[key]:
-                    base_topic = f'/rpi/{rpi_id}'
+        for key in keys_list:
+            for rpi_id in devices.devices_dict[key]:
+                base_topic = f'/rpi/{rpi_id}'
 
-                    self.client.publish(f'{base_topic}/command', json.dumps({'command':{'type':'pumps','state':f'1:{state}'}}))
+                self.client.publish(f'{base_topic}/command', json.dumps({'command':{'type':'pumps','state':f'1:{state}'}}))
