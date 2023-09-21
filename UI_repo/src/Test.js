@@ -3,8 +3,6 @@ import React, { useEffect, useState } from 'react';
 import ProgressBar from "./ProgressBar";
 
 function Test()  {
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
   const [socket, setSocket] = useState(null);
   const [FarmState, setFarmState] = useState({
     "light": 'loading..',
