@@ -21,7 +21,7 @@ function Test()  {
 
     console.log("useeFFECT TRIGGERERD!")
     // Establish a WebSocket connection when the component mounts
-    const newSocket = new WebSocket('ws://localhost:8000/ws'); // Replace with your WebSocket server address
+    const newSocket = new WebSocket('ws://13.48.150.229:8000/ws'); // Replace with your WebSocket server address
 
     newSocket.addEventListener('open', (event) => {
       console.log('WebSocket connection opened:', event);
