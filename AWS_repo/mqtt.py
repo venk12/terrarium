@@ -29,17 +29,18 @@ def on_data_message(client, userdata, message):
     if data_type == 'temperature':
 
         temperature_list = payload['values']
+        print("Temprature Reading:", temperature_list)
 
         # send temperature list to react
         pass
     elif data_type == 'humidity':
         humidity_list = payload['values']
-
+        print("Humidity Reading:", humidity_list)
         # send humidity list to react
         pass
     elif data_type == 'water_level':
         water_level = payload['values']
-
+        print("Water Level Reading:", water_level)
         # send water_level to react
         pass
 
