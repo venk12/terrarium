@@ -1,3 +1,6 @@
+![alt text](https://i.ibb.co/Fn94zNS/2.png)
+![alt text](https://i.ibb.co/9qYxHPF/3.png)
+
 To clone the latest version from git repo:
 >> git clone https://github.com/venk12/terra-monorepo.git
 
