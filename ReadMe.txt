@@ -1,9 +1,6 @@
 ![alt text](https://i.ibb.co/Fn94zNS/2.png)
 ![alt text](https://i.ibb.co/9qYxHPF/3.png)
 
-<a href="https://ibb.co/9GJHWzF"><img src="https://i.ibb.co/Fn94zNS/2.png" alt="2" border="0"></a>
-<a href="https://ibb.co/rZyB29C"><img src="https://i.ibb.co/9qYxHPF/3.png" alt="3" border="0"></a>
-
 To clone the latest version from git repo:
 >> git clone https://github.com/venk12/terra-monorepo.git
 
